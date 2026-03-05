@@ -16,7 +16,7 @@ export function RichTextEditor({ content, editable, onUpdate }: RichTextEditorPr
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content,
+    content: content || '',
     editable,
     onUpdate: ({ editor }) => {
       onUpdate(editor.getHTML());
@@ -28,7 +28,7 @@ export function RichTextEditor({ content, editable, onUpdate }: RichTextEditorPr
   }, []);
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (editor && content && content !== editor.getHTML()) {
       editor.commands.setContent(content);
     }
   }, [editor, content]);

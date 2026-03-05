@@ -21,12 +21,12 @@ export function useComments(documentId: string) {
 
   // Handle different response formats
   let comments: Comment[] = [];
-  if (Array.isArray(data)) {
-    comments = data;
-  } else if (data?.data && Array.isArray(data.data)) {
-    comments = data.data;
+  if (data?.data?.comments && Array.isArray(data.data.comments)) {
+    comments = data.data.comments;
   } else if (data?.comments && Array.isArray(data.comments)) {
     comments = data.comments;
+  } else if (Array.isArray(data)) {
+    comments = data;
   }
 
   return {

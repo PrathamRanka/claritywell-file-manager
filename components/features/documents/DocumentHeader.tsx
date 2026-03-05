@@ -67,7 +67,7 @@ export function DocumentHeader({ document, saveStatus, onShare, onDownload }: Do
             <Clock className="w-4 h-4" />
             <span>{formatDate(document.createdAt)}</span>
           </div>
-          {document.requirement && (
+          {document.requirement?.clientName && (
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4" />
               <span>{document.requirement.clientName}</span>

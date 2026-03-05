@@ -120,26 +120,26 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
         const { data: uploadData } = await requestRes.json();
 
-        // Step 2: Upload file to S3 (simulate progress)
-        // In production, you'd upload to uploadData.uploadUrl with progress tracking
-        // For now, simulate progress
-        let progress = 0;
-        const interval = setInterval(() => {
-          progress += Math.random() * 30;
-          if (progress >= 90) {
-            progress = 90;
-            clearInterval(interval);
-          }
-          newUploads.set(uploadId, {
-            ...newUploads.get(uploadId)!,
-            progress,
-          });
-          setUploads(new Map(newUploads));
-        }, 200);
+        // Step 2: Upload file to S3 using signed URL
+        const uploadRes = await fetch(uploadData.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type,
+          },
+          body: file,
+          signal: abortController.signal,
+        });
 
-        // Wait a bit to simulate upload
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        clearInterval(interval);
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload file to storage');
+        }
+
+        // Update progress to 90% after upload
+        newUploads.set(uploadId, {
+          ...newUploads.get(uploadId)!,
+          progress: 90,
+        });
+        setUploads(new Map(newUploads));
 
         // Step 3: Create document in database (already links to folder)
         const createRes = await fetch('/api/documents', {

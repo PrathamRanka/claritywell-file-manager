@@ -35,7 +35,7 @@ export function CommentsSection({ comments, onAddComment, isLoading }: CommentsS
       <div className="bg-surface border border-border rounded-lg p-4">
         <div className="flex items-start justify-between gap-4 mb-2">
           <div>
-            <span className="font-medium">{comment.author.name}</span>
+            <span className="font-medium">{comment.author?.name || 'Unknown'}</span>
             <span className="text-sm text-muted-foreground ml-2">
               {formatRelativeTime(comment.createdAt)}
             </span>
@@ -52,7 +52,7 @@ export function CommentsSection({ comments, onAddComment, isLoading }: CommentsS
         </div>
         <p className="text-foreground whitespace-pre-wrap">{comment.content}</p>
       </div>
-      {comment.replies && comment.replies.map((reply) => renderComment(reply, depth + 1))}
+      {comment.replies && comment.replies.length > 0 && comment.replies.map((reply) => renderComment(reply, depth + 1))}
     </div>
   );
 

@@ -27,7 +27,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         await fetch(`/api/documents/${documentId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ contentHtml: content }),
         });
         setSaveStatus('saved');
       } catch {
@@ -43,7 +43,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       await fetch(`/api/documents/${documentId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, parentId }),
+        body: JSON.stringify({ content, parentCommentId: parentId }),
       });
 
       mutateComments();
@@ -57,6 +57,14 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   const handleShare = async () => {
     toast.success('Sharing updated');
     setShareModalOpen(false);
+  };
+
+  const handleDownload = () => {
+    if (document?.signedUrl) {
+      window.open(document.signedUrl, '_blank');
+    } else {
+      toast.error('Download URL not available');
+    }
   };
 
   if (!document) {
@@ -73,20 +81,45 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
           document={document}
           saveStatus={saveStatus}
           onShare={() => setShareModalOpen(true)}
+          onDownload={handleDownload}
         />
 
         {/* Editor content */}
         <div className="flex-1 overflow-auto p-6">
-          {document.canEdit ? (
+          {document.type === 'PDF' && document.signedUrl ? (
+            <div className="h-full">
+              <iframe
+                src={document.signedUrl}
+                className="w-full h-full border border-border rounded-lg"
+                title={document.title}
+              />
+            </div>
+          ) : document.type === 'IMAGE' && document.signedUrl ? (
+            <div className="flex items-center justify-center h-full">
+              <img
+                src={document.signedUrl}
+                alt={document.title}
+                className="max-w-full max-h-full object-contain rounded-lg border border-border"
+              />
+            </div>
+          ) : document.type === 'PDF' && !document.signedUrl ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-center">
+                <p className="mb-2">⚠️ File upload is simulated</p>
+                <p className="text-sm">The PDF was not actually uploaded to storage.</p>
+                <p className="text-sm">In production, files would be uploaded to S3 and displayed here.</p>
+              </div>
+            </div>
+          ) : document.canEdit ? (
             <RichTextEditor
-              content={document.content}
+              content={document.content || ''}
               editable={document.canEdit}
               onUpdate={handleContentUpdate}
             />
           ) : (
             <div
               className="prose prose-slate max-w-none"
-              dangerouslySetInnerHTML={{ __html: document.content }}
+              dangerouslySetInnerHTML={{ __html: document.content || '<p>No content</p>' }}
             />
           )}
         </div>

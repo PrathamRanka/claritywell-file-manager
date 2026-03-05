@@ -18,16 +18,43 @@ export interface Document {
     clientName: string;
   };
   canEdit: boolean;
+  signedUrl?: string | null;
+  mimeType?: string | null;
 }
 
 export function useDocument(documentId: string) {
-  const { data, error, mutate, isLoading } = useSWR<Document>(
+  const { data, error, mutate, isLoading } = useSWR<any>(
     documentId ? `/api/documents/${documentId}` : null,
     fetcher
   );
 
+  // Extract document from API response structure
+  let document: Document | undefined = undefined;
+  if (data?.data?.document) {
+    document = {
+      ...data.data.document,
+      content: data.data.document.contentHtml || '',
+      signedUrl: data.data.signedUrl || null,
+      canEdit: true, // TODO: Get from permissions
+    };
+  } else if (data?.document) {
+    document = {
+      ...data.document,
+      content: data.document.contentHtml || '',
+      signedUrl: data.signedUrl || null,
+      canEdit: true,
+    };
+  } else if (data?.id) {
+    document = {
+      ...data,
+      content: data.contentHtml || '',
+      signedUrl: data.signedUrl || null,
+      canEdit: true,
+    };
+  }
+
   return {
-    document: data,
+    document,
     isLoading,
     isError: error,
     mutate,
