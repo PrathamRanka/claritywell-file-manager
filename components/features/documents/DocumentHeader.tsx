@@ -61,7 +61,7 @@ export function DocumentHeader({ document, saveStatus, onShare, onDownload }: Do
         <div className="flex items-center gap-4 flex-wrap text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            <span>{document.owner.name}</span>
+            <span>{document.owner?.name || 'Unknown'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />

@@ -64,7 +64,7 @@ export function DocumentGrid({ documents, isLoading, onContextMenu }: DocumentGr
               )}
             </div>
             <div className="space-y-1 text-sm text-muted-foreground">
-              <p>By {doc.owner.name}</p>
+              <p>By {doc.owner?.name || 'Unknown'}</p>
               <p>{formatRelativeTime(doc.createdAt)}</p>
               {doc.type && (
                 <span className="inline-block px-2 py-0.5 bg-muted rounded text-xs">

@@ -91,7 +91,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const handleUpload = async (files: FileList) => {
     const newUploads = new Map(uploads);
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       const uploadId = `${Date.now()}-${file.name}`;
       const abortController = new AbortController();
 
@@ -101,32 +101,84 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         status: 'uploading',
         abortController,
       });
+      setUploads(new Map(newUploads));
 
-      // Simulate upload progress (in real app, wire to signed URL upload)
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          newUploads.set(uploadId, {
-            ...newUploads.get(uploadId)!,
-            progress: 100,
-            status: 'done',
-          });
-          setUploads(new Map(newUploads));
-          toast.success(`${file.name} uploaded`);
-        } else {
+      try {
+        // Step 1: Request signed upload URL
+        const requestRes = await fetch('/api/uploads/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            size: file.size,
+          }),
+          signal: abortController.signal,
+        });
+
+        if (!requestRes.ok) throw new Error('Failed to request upload');
+
+        const { data: uploadData } = await requestRes.json();
+
+        // Step 2: Upload file to S3 (simulate progress)
+        // In production, you'd upload to uploadData.uploadUrl with progress tracking
+        // For now, simulate progress
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 30;
+          if (progress >= 90) {
+            progress = 90;
+            clearInterval(interval);
+          }
           newUploads.set(uploadId, {
             ...newUploads.get(uploadId)!,
             progress,
           });
           setUploads(new Map(newUploads));
-        }
-      }, 500);
-    });
+        }, 200);
 
-    setUploads(newUploads);
+        // Wait a bit to simulate upload
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        clearInterval(interval);
+
+        // Step 3: Create document in database (already links to folder)
+        const createRes = await fetch('/api/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: file.name,
+            type: file.type.startsWith('image/') ? 'IMAGE' : 'PDF',
+            visibility: 'PRIVATE',
+            storagePath: uploadData.fileKey,
+            mimeType: file.type,
+            folderId,
+          }),
+          signal: abortController.signal,
+        });
+
+        if (!createRes.ok) throw new Error('Failed to create document');
+
+        newUploads.set(uploadId, {
+          ...newUploads.get(uploadId)!,
+          progress: 100,
+          status: 'done',
+        });
+        setUploads(new Map(newUploads));
+        toast.success(`${file.name} uploaded`);
+
+        // Refresh the folder items
+        mutate();
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          newUploads.set(uploadId, {
+            ...newUploads.get(uploadId)!,
+            status: 'failed',
+          });
+          setUploads(new Map(newUploads));
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      }
+    }
   };
 
   const handleCancelUpload = (uploadId: string) => {

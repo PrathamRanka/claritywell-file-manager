@@ -35,6 +35,8 @@ export function mapSafeDocument(doc: any) {
     mimeType: doc.mimeType,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
+    owner: doc.owner,
+    requirement: doc.requirement,
   };
 }
 
@@ -64,7 +66,7 @@ export async function createDocumentService(params: {
     folderId: params.folderId,
   });
 
-  return { id: newDocument.id, title: newDocument.title };
+  return { data: { document: newDocument } };
 }
 
 export async function listDocumentsService(params: {

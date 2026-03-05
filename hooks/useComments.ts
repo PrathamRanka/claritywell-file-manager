@@ -14,13 +14,23 @@ export interface Comment {
 }
 
 export function useComments(documentId: string) {
-  const { data, error, mutate, isLoading } = useSWR<Comment[]>(
+  const { data, error, mutate, isLoading } = useSWR<any>(
     documentId ? `/api/documents/${documentId}/comment` : null,
     fetcher
   );
 
+  // Handle different response formats
+  let comments: Comment[] = [];
+  if (Array.isArray(data)) {
+    comments = data;
+  } else if (data?.data && Array.isArray(data.data)) {
+    comments = data.data;
+  } else if (data?.comments && Array.isArray(data.comments)) {
+    comments = data.comments;
+  }
+
   return {
-    comments: data ?? [],
+    comments,
     isLoading,
     isError: error,
     mutate,
@@ -30,6 +40,11 @@ export function useComments(documentId: string) {
 export function buildCommentTree(comments: Comment[]): Comment[] {
   const map = new Map<string, Comment>();
   const roots: Comment[] = [];
+
+  // Ensure comments is an array
+  if (!Array.isArray(comments)) {
+    return [];
+  }
 
   comments.forEach((comment) => {
     map.set(comment.id, { ...comment, replies: [] });

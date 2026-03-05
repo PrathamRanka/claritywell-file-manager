@@ -119,7 +119,11 @@ export async function listFolderItemsService(params: {
     return { error: 'Forbidden', status: 403 };
   }
 
-  const items = await listFolderItems(folderId, skip, limit);
+  const folderItems = await listFolderItems(folderId, skip, limit);
+  
+  // Extract documents from folder items
+  const items = folderItems.map((item: any) => item.document).filter(Boolean);
+  
   return {
     data: {
       items,

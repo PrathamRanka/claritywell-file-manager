@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { listDocumentsService } from '@/lib/services/documentService';
+import { listDocumentsService, createDocumentService } from '@/lib/services/documentService';
+import { createDocumentSchema } from '@/lib/validations';
 
 export async function GET(req: Request) {
   try {
@@ -27,6 +28,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Documents Error:', error);
+    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const parsed = createDocumentSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+    }
+
+    const result = await createDocumentService({
+      userId: session.user.id,
+      ...parsed.data,
+    });
+
+    if (result.error) {
+      return NextResponse.json({ data: null, error: result.error }, { status: result.status || 400 });
+    }
+
+    return NextResponse.json({ data: result.data, error: null }, { status: 201 });
+  } catch (error) {
+    console.error('POST Document Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
