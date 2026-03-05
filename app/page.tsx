@@ -8,7 +8,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { StatCard, LoadingSpinner } from '@/components/ui';
 
 function AdminDashboard() {
-  const { stats, isError } = useDashboardStats();
+  const { stats, isError, isLoading } = useDashboardStats();
 
   return (
     <div className="space-y-8">
@@ -16,19 +16,19 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Total Users"
-          value={stats?.totalUsers || '—'}
+          value={isLoading ? '—' : (stats?.totalUsers ?? 0)}
           icon={Users}
           iconColor="text-blue-600"
         />
         <StatCard
           title="Total Documents"
-          value={stats?.totalDocuments || '—'}
+          value={isLoading ? '—' : (stats?.totalDocuments ?? 0)}
           icon={FileText}
           iconColor="text-blue-600"
         />
         <StatCard
           title="Departments"
-          value={stats?.totalDepartments || '—'}
+          value={isLoading ? '—' : (stats?.totalDepartments ?? 0)}
           icon={Building2}
           iconColor="text-green-600"
         />

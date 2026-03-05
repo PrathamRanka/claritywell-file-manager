@@ -5,12 +5,17 @@ export interface DashboardStats {
   totalUsers: number;
   totalDocuments: number;
   totalDepartments: number;
+  totalRequirements?: number;
 }
 
 export function useDashboardStats() {
   const { data, error, isLoading } = useSWR<DashboardStats>(
     '/api/dashboard/stats',
-    fetcher
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
   );
 
   return {
