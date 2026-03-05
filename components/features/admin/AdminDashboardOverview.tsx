@@ -30,20 +30,48 @@ export function AdminDashboardOverview() {
       try {
         // Fetch all stats in parallel
         const [usersRes, departmentsRes, requirementsRes] = await Promise.all([
-          fetch('/api/users?limit=1000'),
-          fetch('/api/departments?limit=1000'),
-          fetch('/api/requirements?limit=1000'),
+          fetch('/api/users?limit=1000').catch(() => null),
+          fetch('/api/departments?limit=1000').catch(() => null),
+          fetch('/api/requirements?limit=1000').catch(() => null),
         ]);
 
-        const [usersData, departmentsData, requirementsData] = await Promise.all([
-          usersRes.json(),
-          departmentsRes.json(),
-          requirementsRes.json(),
-        ]);
+        let users = [];
+        let departments = [];
+        let requirements = [];
 
-        const users = Array.isArray(usersData) ? usersData : usersData.data || [];
-        const departments = Array.isArray(departmentsData) ? departmentsData : departmentsData.data || [];
-        const requirements = Array.isArray(requirementsData) ? requirementsData : requirementsData.data || [];
+        // Safely parse each response
+        if (usersRes?.ok) {
+          const usersData = await usersRes.json();
+          if (Array.isArray(usersData)) {
+            users = usersData;
+          } else if (usersData.data?.users && Array.isArray(usersData.data.users)) {
+            users = usersData.data.users;
+          } else if (usersData.users && Array.isArray(usersData.users)) {
+            users = usersData.users;
+          }
+        }
+
+        if (departmentsRes?.ok) {
+          const departmentsData = await departmentsRes.json();
+          if (Array.isArray(departmentsData)) {
+            departments = departmentsData;
+          } else if (departmentsData.data?.departments && Array.isArray(departmentsData.data.departments)) {
+            departments = departmentsData.data.departments;
+          } else if (departmentsData.departments && Array.isArray(departmentsData.departments)) {
+            departments = departmentsData.departments;
+          }
+        }
+
+        if (requirementsRes?.ok) {
+          const requirementsData = await requirementsRes.json();
+          if (Array.isArray(requirementsData)) {
+            requirements = requirementsData;
+          } else if (requirementsData.data?.requirements && Array.isArray(requirementsData.data.requirements)) {
+            requirements = requirementsData.data.requirements;
+          } else if (requirementsData.requirements && Array.isArray(requirementsData.requirements)) {
+            requirements = requirementsData.requirements;
+          }
+        }
 
         // Calculate active users (logged in last 7 days)
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
