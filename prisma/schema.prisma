@@ -1,0 +1,174 @@
+datasource db {
+  provider  = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DocumentType {
+  WYSIWYG
+  IMAGE
+  PDF
+}
+
+enum Visibility {
+  PRIVATE
+  DEPARTMENT
+  SHARED
+}
+
+model User {
+  id                    String             @id @default(cuid())
+  email                 String             @unique
+  passwordHash          String
+  role                  Role
+  name                  String
+  createdAt             DateTime           @default(now())
+  departmentMemberships DepartmentMember[]
+  documentsCreated      Document[]         @relation("DocumentOwner")
+  requirementsCreated   Requirement[]      @relation("RequirementCreator")
+  foldersCreated        Folder[]           @relation("FolderCreator")
+  comments              Comment[]          @relation("CommentAuthor")
+  documentAcls          DocumentACL[]
+  auditLogs             AuditLog[]         @relation("AuditUser")
+}
+
+model Department {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  createdAt    DateTime           @default(now())
+  members      DepartmentMember[]
+  requirements Requirement[]
+}
+
+model DepartmentMember {
+  userId       String
+  departmentId String
+  joinedAt     DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, departmentId])
+}
+
+model Requirement {
+  id           String       @id @default(cuid())
+  clientName   String
+  dueDate      DateTime
+  priority     Priority
+  departmentId String
+  createdById  String
+  createdAt    DateTime     @default(now())
+
+  department   Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("RequirementCreator", fields: [createdById], references: [id])
+  documents    Document[]
+}
+
+model Document {
+  id             String        @id @default(cuid())
+  title          String
+  type           DocumentType
+  visibility     Visibility
+  ownerId        String
+  requirementId  String?
+  storagePath    String?
+  mimeType       String?
+  contentHtml    String?
+  contentExcerpt String?       @db.VarChar(250)
+  deletedAt      DateTime?     // Soft delete indicator
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  owner          User          @relation("DocumentOwner", fields: [ownerId], references: [id])
+  requirement    Requirement?  @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  folderItems    FolderItem[]
+  comments       Comment[]
+  acl            DocumentACL[]
+
+  @@index([ownerId])
+  @@index([requirementId])
+  @@index([visibility])
+}
+
+model DocumentACL {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  canEdit    Boolean  @default(false)
+  canComment Boolean  @default(false)
+  canView    Boolean  @default(true)
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+}
+
+model Folder {
+  id          String       @id @default(cuid())
+  name        String
+  parentId    String?
+  createdById String
+  createdAt   DateTime     @default(now())
+
+  parent      Folder?      @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  subfolders  Folder[]     @relation("FolderToFolder")
+  createdBy   User         @relation("FolderCreator", fields: [createdById], references: [id])
+  items       FolderItem[]
+}
+
+model FolderItem {
+  id         String   @id @default(cuid())
+  folderId   String
+  documentId String
+
+  folder     Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, documentId])
+}
+
+model Comment {
+  id              String    @id @default(cuid())
+  documentId      String
+  authorId        String
+  content         String
+  parentCommentId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  document        Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author          User      @relation("CommentAuthor", fields: [authorId], references: [id])
+  parentComment   Comment?  @relation("CommentToComment", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  childComments   Comment[] @relation("CommentToComment")
+
+  @@index([documentId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  userId     String
+  documentId String?
+  folderId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation("AuditUser", fields: [userId], references: [id])
+}
