@@ -43,7 +43,49 @@ export function canEditDocument(
 
   if (document.ownerId === userId) return true;
 
+  if (document.visibility === 'SHARED' && document.acl) {
+    return document.acl.some((acl) => acl.userId === userId && acl.canEdit);
+  }
+
   return false;
+}
+
+export function canViewRequirement(
+  userRole: Role | string,
+  userDepartmentIds: string[],
+  requirement: { departmentId: string }
+): boolean {
+  if (userRole === 'ADMIN') return true;
+  return userDepartmentIds.includes(requirement.departmentId);
+}
+
+export function canCreateDocumentForRequirement(
+  userRole: Role | string,
+  userDepartmentIds: string[],
+  requirement: { departmentId: string }
+): boolean {
+  if (userRole === 'ADMIN') return true;
+  return userDepartmentIds.includes(requirement.departmentId);
+}
+
+export function canManageFolder(
+  userId: string,
+  folder: { createdById: string },
+  userRole: Role | string = 'USER'
+): boolean {
+  if (userRole === 'ADMIN') return true;
+  return folder.createdById === userId;
+}
+
+export function canAddToFolder(
+  userId: string,
+  document: DocumentWithRelations,
+  userRole: Role | string = 'USER',
+  userDepartmentIds: string[] = []
+): boolean {
+  const canView = canViewDocument(userId, document, userRole, userDepartmentIds);
+  const canMove = userRole === 'ADMIN' || document.ownerId === userId;
+  return canView && canMove;
 }
 
 export function canCommentDocument(
@@ -125,4 +167,15 @@ export function getVisibleDocumentsWhereClause(
       },
     ],
   };
+}
+
+export async function getAccessibleDepartments(
+  userId: string,
+  prisma: any
+): Promise<string[]> {
+  const memberships = await prisma.departmentMember.findMany({
+    where: { userId },
+    select: { departmentId: true }
+  });
+  return memberships.map((m: any) => m.departmentId);
 }
