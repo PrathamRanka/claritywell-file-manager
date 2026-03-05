@@ -26,7 +26,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Requirements Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    console.error('Error details:', { errorMessage, stack: error instanceof Error ? error.stack : null });
+    return NextResponse.json({ data: null, error: errorMessage }, { status: 500 });
   }
 }
 

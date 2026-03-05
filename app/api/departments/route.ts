@@ -18,7 +18,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Departments Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    console.error('Error details:', { errorMessage, stack: error instanceof Error ? error.stack : null });
+    return NextResponse.json({ data: null, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -39,9 +41,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ data: result.data, error: null });
   } catch (error: any) {
     console.error('CREATE Department Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    console.error('Error details:', { errorMessage, stack: error instanceof Error ? error.stack : null });
     if (error?.code === 'P2002') {
       return NextResponse.json({ data: null, error: 'Department name already exists' }, { status: 400 });
     }
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ data: null, error: errorMessage }, { status: 500 });
   }
 }

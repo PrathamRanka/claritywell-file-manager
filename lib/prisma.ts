@@ -13,9 +13,12 @@ export const prisma =
     adapter: new PrismaPg(
       new Pool({
         connectionString: process.env.DATABASE_URL,
+        max: 10, // Adjust pool size based on your needs
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
       })
     ),
-    log: process.env.NODE_ENV === 'development' ? ['error'] : [],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

@@ -13,10 +13,10 @@ export async function GET(req: Request) {
       userRole: session.user.role || 'USER',
     });
 
-    return NextResponse.json({ data: result.data, error: null });
+    return NextResponse.json(result.data || []);
   } catch (error) {
     console.error('GET Folders Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json([], { status: 500 });
   }
 }
 
