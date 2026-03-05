@@ -4,6 +4,7 @@ import {
   updateFolder,
   softDeleteFolder,
   createFolderItem,
+  createFolder,
 } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
@@ -88,4 +89,14 @@ export async function addFolderItemService(params: {
 
   const item = await createFolderItem(folderId, documentId);
   return { data: { item } };
+}
+
+export async function createFolderService(params: {
+  userId: string;
+  name: string;
+  parentId?: string | null;
+}) {
+  const { userId, name, parentId } = params;
+  const folder = await createFolder({ name, createdById: userId, parentId });
+  return { data: { folder } };
 }

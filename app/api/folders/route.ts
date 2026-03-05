@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { listFoldersService } from '@/lib/services/folderService';
+import { createFolderSchema } from '@/lib/validations';
+import { listFoldersService, createFolderService } from '@/lib/services/folderService';
 
 export async function GET(req: Request) {
   try {
@@ -15,6 +16,28 @@ export async function GET(req: Request) {
     return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Folders Error:', error);
+    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+
+    const body = await req.json();
+    const parsed = createFolderSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+
+    const result = await createFolderService({
+      userId: session.user.id,
+      name: parsed.data.name,
+      parentId: parsed.data.parentId,
+    });
+
+    return NextResponse.json({ data: result.data, error: null });
+  } catch (error) {
+    console.error('POST Folder Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }

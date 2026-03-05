@@ -1,6 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/prisma/generated';
 
+export async function createFolder(data: {
+  name: string;
+  createdById: string;
+  parentId?: string | null;
+}) {
+  return prisma.folder.create({
+    data: data as any,
+    select: { id: true, name: true, parentId: true, createdAt: true },
+  });
+}
+
 export async function findFolder(id: string) {
   return prisma.folder.findUnique({ where: { id } });
 }

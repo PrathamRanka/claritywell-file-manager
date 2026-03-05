@@ -3,6 +3,7 @@ import {
   createDepartment,
   listDepartmentMembers,
   removeDepartmentMember,
+  addDepartmentMember,
 } from '@/lib/repositories/departmentRepository';
 
 export async function listDepartmentsService(params: { page: number; limit: number }) {
@@ -31,4 +32,9 @@ export async function listDepartmentMembersService(params: {
 export async function removeDepartmentMemberService(userId: string, departmentId: string) {
   await removeDepartmentMember(userId, departmentId);
   return { data: { success: true } };
+}
+
+export async function addDepartmentMemberService(userId: string, departmentId: string) {
+  const member = await addDepartmentMember(userId, departmentId);
+  return { data: { member } };
 }
