@@ -1,4 +1,4 @@
-import { listUsers, countUsers, updateUser } from '@/lib/repositories/userRepository';
+import { listUsers, countUsers, updateUser, deleteUser } from '@/lib/repositories/userRepository';
 
 export async function listUsersService(params: { page: number; limit: number }) {
   const { page, limit } = params;
@@ -24,4 +24,9 @@ export async function updateUserService(params: {
   const { userId, role, name } = params;
   const updatedUser = await updateUser(userId, { role, name });
   return { data: { user: updatedUser } };
+}
+
+export async function deleteUserService(userId: string) {
+  const deletedUser = await deleteUser(userId);
+  return { data: { user: deletedUser } };
 }

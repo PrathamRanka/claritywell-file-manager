@@ -15,6 +15,10 @@ export async function listComments(documentId: string, skip: number, limit: numb
   });
 }
 
+export async function countComments(documentId: string) {
+  return prisma.comment.count({ where: { documentId } });
+}
+
 export async function findComment(id: string) {
   return prisma.comment.findUnique({ where: { id } });
 }

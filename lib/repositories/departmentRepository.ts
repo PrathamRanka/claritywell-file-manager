@@ -41,3 +41,18 @@ export async function removeDepartmentMember(userId: string, departmentId: strin
     where: { userId_departmentId: { userId, departmentId } },
   });
 }
+
+export async function updateDepartment(id: string, name: string) {
+  return prisma.department.update({
+    where: { id },
+    data: { name },
+    select: { id: true, name: true, createdAt: true },
+  });
+}
+
+export async function deleteDepartment(id: string) {
+  return prisma.$transaction([
+    prisma.departmentMember.deleteMany({ where: { departmentId: id } }),
+    prisma.department.delete({ where: { id } }),
+  ]);
+}

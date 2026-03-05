@@ -31,3 +31,10 @@ export async function updateUser(id: string, data: { role?: string; name?: strin
     select: { id: true, name: true, role: true },
   });
 }
+
+export async function deleteUser(id: string) {
+  return prisma.user.delete({
+    where: { id },
+    select: { id: true, name: true, email: true },
+  });
+}

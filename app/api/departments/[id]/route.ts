@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { updateUserSchema } from '@/lib/validations';
-import { updateUserService, deleteUserService } from '@/lib/services/userService';
+import { createDepartmentSchema } from '@/lib/validations';
+import { updateDepartmentService, deleteDepartmentService } from '@/lib/services/departmentService';
 
-export async function PATCH(
+export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
@@ -14,18 +14,21 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const parsed = updateUserSchema.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+    const parsed = createDepartmentSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+    }
 
-    const result = await updateUserService({
-      userId: params.id,
-      role: parsed.data.role,
-      name: parsed.data.name,
-    });
-
+    const result = await updateDepartmentService(params.id, parsed.data.name);
     return NextResponse.json({ data: result.data, error: null });
-  } catch (error) {
-    console.error('PATCH User Error:', error);
+  } catch (error: any) {
+    console.error('UPDATE Department Error:', error);
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ data: null, error: 'Department name already exists' }, { status: 400 });
+    }
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ data: null, error: 'Department not found' }, { status: 404 });
+    }
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -40,12 +43,12 @@ export async function DELETE(
       return NextResponse.json({ data: null, error: 'Forbidden' }, { status: 403 });
     }
 
-    const result = await deleteUserService(params.id);
+    const result = await deleteDepartmentService(params.id);
     return NextResponse.json({ data: result.data, error: null });
   } catch (error: any) {
-    console.error('DELETE User Error:', error);
+    console.error('DELETE Department Error:', error);
     if (error?.code === 'P2025') {
-      return NextResponse.json({ data: null, error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ data: null, error: 'Department not found' }, { status: 404 });
     }
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }

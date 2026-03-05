@@ -4,6 +4,8 @@ import {
   listDepartmentMembers,
   removeDepartmentMember,
   addDepartmentMember,
+  updateDepartment,
+  deleteDepartment,
 } from '@/lib/repositories/departmentRepository';
 
 export async function listDepartmentsService(params: { page: number; limit: number }) {
@@ -16,6 +18,16 @@ export async function listDepartmentsService(params: { page: number; limit: numb
 export async function createDepartmentService(name: string) {
   const department = await createDepartment(name);
   return { data: { department } };
+}
+
+export async function updateDepartmentService(id: string, name: string) {
+  const department = await updateDepartment(id, name);
+  return { data: { department } };
+}
+
+export async function deleteDepartmentService(id: string) {
+  await deleteDepartment(id);
+  return { data: { success: true } };
 }
 
 export async function listDepartmentMembersService(params: {

@@ -63,3 +63,24 @@ export async function moveFolderItem(documentId: string, destinationFolderId: st
     prisma.folderItem.create({ data: { documentId, folderId: destinationFolderId } }),
   ]);
 }
+
+export async function listFolderItems(folderId: string, skip: number = 0, limit: number = 50) {
+  return prisma.folderItem.findMany({
+    where: { folderId, document: { deletedAt: null } },
+    include: {
+      document: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          ownerId: true,
+          createdAt: true,
+          owner: { select: { name: true, email: true } },
+        },
+      },
+    },
+    skip,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+  });
+}

@@ -5,6 +5,7 @@ import {
   softDeleteFolder,
   createFolderItem,
   createFolder,
+  listFolderItems,
 } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
@@ -99,4 +100,30 @@ export async function createFolderService(params: {
   const { userId, name, parentId } = params;
   const folder = await createFolder({ name, createdById: userId, parentId });
   return { data: { folder } };
+}
+
+export async function listFolderItemsService(params: {
+  folderId: string;
+  userId: string;
+  userRole: string;
+  page: number;
+  limit: number;
+}) {
+  const { folderId, userId, userRole, page, limit } = params;
+  const skip = (page - 1) * limit;
+
+  const folder = await findFolder(folderId);
+  if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
+
+  if (!canManageFolder(userId, folder, userRole)) {
+    return { error: 'Forbidden', status: 403 };
+  }
+
+  const items = await listFolderItems(folderId, skip, limit);
+  return {
+    data: {
+      items,
+      page,
+    },
+  };
 }

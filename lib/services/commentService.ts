@@ -1,7 +1,43 @@
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
-import { findComment, createComment } from '@/lib/repositories/commentRepository';
+import { findComment, createComment, listComments, countComments } from '@/lib/repositories/commentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
-import { canCommentDocument } from '@/lib/permissions';
+import { canCommentDocument, canViewDocument } from '@/lib/permissions';
+
+export async function listCommentsService(params: {
+  documentId: string;
+  userId: string;
+  userRole: string;
+  page: number;
+  limit: number;
+}) {
+  const { documentId, userId, userRole, page, limit } = params;
+  const skip = (page - 1) * limit;
+
+  const document = await findDocumentWithRelations(documentId);
+  if (!document || document.deletedAt) {
+    return { error: 'Not Found', status: 404 };
+  }
+
+  const userDepartmentIds = await getUserDepartmentIds(userId);
+
+  if (!canViewDocument(userId, document, userRole, userDepartmentIds)) {
+    return { error: 'Forbidden', status: 403 };
+  }
+
+  const [comments, total] = await Promise.all([
+    listComments(documentId, skip, limit),
+    countComments(documentId),
+  ]);
+
+  return {
+    data: {
+      comments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
 
 export async function createCommentService(params: {
   documentId: string;
