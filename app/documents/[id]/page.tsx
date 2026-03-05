@@ -102,12 +102,12 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
                 className="max-w-full max-h-full object-contain rounded-lg border border-border"
               />
             </div>
-          ) : document.type === 'PDF' && !document.signedUrl ? (
+          ) : (document.type === 'PDF' || document.type === 'IMAGE') && !document.signedUrl ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
-                <p className="mb-2">⚠️ File upload is simulated</p>
-                <p className="text-sm">The PDF was not actually uploaded to storage.</p>
-                <p className="text-sm">In production, files would be uploaded to S3 and displayed here.</p>
+                <p className="mb-2">File Missing From Storage</p>
+                <p className="text-sm">This document record exists, but the file key was not found in object storage.</p>
+                <p className="text-sm">Re-upload the file to restore preview and download.</p>
               </div>
             </div>
           ) : document.canEdit ? (

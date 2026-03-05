@@ -238,6 +238,7 @@ export async function getThumbnailUrlService(params: {
   if (isVisible === 0) return { error: 'Forbidden', status: 403 };
 
   const signedUrl = await getSignedDownloadUrl(document.thumbnailPath, 5 * 60);
+  if (!signedUrl) return { error: 'Thumbnail object not found in storage', status: 404 };
 
   return { data: { signedUrl } };
 }

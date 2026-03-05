@@ -116,11 +116,17 @@ export default function FolderPage({ params }: { params: { id: string } }) {
           signal: abortController.signal,
         });
 
-        if (!requestRes.ok) throw new Error('Failed to request upload');
+        if (!requestRes.ok) {
+          const errorData = await requestRes.json();
+          console.error('Upload request failed:', errorData);
+          throw new Error(`Failed to request upload: ${errorData.error || requestRes.statusText}`);
+        }
 
         const { data: uploadData } = await requestRes.json();
+        console.log('✅ Got signed URL:', uploadData.fileKey);
 
         // Step 2: Upload file to S3 using signed URL
+        console.log('📤 Uploading to S3...');
         const uploadRes = await fetch(uploadData.uploadUrl, {
           method: 'PUT',
           headers: {
@@ -131,8 +137,16 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         });
 
         if (!uploadRes.ok) {
-          throw new Error('Failed to upload file to storage');
+          const errorText = await uploadRes.text();
+          console.error('S3 upload failed:', {
+            status: uploadRes.status,
+            statusText: uploadRes.statusText,
+            error: errorText,
+          });
+          throw new Error(`Failed to upload file to storage: ${uploadRes.status} ${uploadRes.statusText}`);
         }
+
+        console.log('✅ File uploaded to S3 successfully');
 
         // Update progress to 90% after upload
         newUploads.set(uploadId, {
@@ -142,6 +156,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         setUploads(new Map(newUploads));
 
         // Step 3: Create document in database (already links to folder)
+        console.log('💾 Creating document in database...');
         const createRes = await fetch('/api/documents', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -156,7 +171,13 @@ export default function FolderPage({ params }: { params: { id: string } }) {
           signal: abortController.signal,
         });
 
-        if (!createRes.ok) throw new Error('Failed to create document');
+        if (!createRes.ok) {
+          const errorData = await createRes.json();
+          console.error('Document creation failed:', errorData);
+          throw new Error(`Failed to create document: ${errorData.error || createRes.statusText}`);
+        }
+
+        console.log('✅ Document created successfully');
 
         newUploads.set(uploadId, {
           ...newUploads.get(uploadId)!,
@@ -169,13 +190,14 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         // Refresh the folder items
         mutate();
       } catch (error: any) {
+        console.error('Upload error:', error);
         if (error.name !== 'AbortError') {
           newUploads.set(uploadId, {
             ...newUploads.get(uploadId)!,
             status: 'failed',
           });
           setUploads(new Map(newUploads));
-          toast.error(`Failed to upload ${file.name}`);
+          toast.error(`Failed to upload ${file.name}: ${error.message}`);
         }
       }
     }
