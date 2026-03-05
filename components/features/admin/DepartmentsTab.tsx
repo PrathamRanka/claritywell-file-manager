@@ -163,7 +163,7 @@ export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
                       setShowAddMember(dept.id);
                       setSelectedUser('');
                     }}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     icon={UserPlus}
                   >

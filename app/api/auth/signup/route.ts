@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           data: null,
-          error: parsed.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+          error: parsed.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
         },
         { status: 400 }
       );

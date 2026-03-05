@@ -168,9 +168,10 @@ export function AuditLogsTab() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {actionIcons[log.action]}
-                        <Badge className={actionColors[log.action] || 'bg-gray-100 text-gray-800'}>
-                          {log.action}
-                        </Badge>
+                        <Badge 
+                          label={log.action}
+                          className={actionColors[log.action] || 'bg-gray-100 text-gray-800'}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -212,7 +213,7 @@ export function AuditLogsTab() {
               <Button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                variant="outline"
+                variant="secondary"
                 size="sm"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -221,7 +222,7 @@ export function AuditLogsTab() {
               <Button
                 onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page === pages}
-                variant="outline"
+                variant="secondary"
                 size="sm"
               >
                 Next

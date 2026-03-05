@@ -94,7 +94,7 @@ export async function advancedSearchService(params: {
       prisma.comment.findMany({
         where: {
           AND: [
-            { content: { search: sanitizedQuery } },
+            { content: { contains: sanitizedQuery, mode: 'insensitive' } },
             {
               document: {
                 AND: [

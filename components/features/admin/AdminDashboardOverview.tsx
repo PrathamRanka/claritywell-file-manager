@@ -85,25 +85,27 @@ export function AdminDashboardOverview() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Users}
-          label="Total Users"
-          value={stats.totalUsers.toString()}
-          subtitle={`${stats.activeUsers} active this week`}
+          title="Total Users"
+          value={stats.totalUsers}
+          iconColor="text-blue-600"
         />
         <StatCard
           icon={Building2}
-          label="Departments"
-          value={stats.totalDepartments.toString()}
+          title="Departments"
+          value={stats.totalDepartments}
+          iconColor="text-purple-600"
         />
         <StatCard
           icon={FileText}
-          label="Requirements"
-          value={stats.totalRequirements.toString()}
+          title="Requirements"
+          value={stats.totalRequirements}
+          iconColor="text-green-600"
         />
         <StatCard
           icon={Activity}
-          label="System Status"
+          title="System Status"
           value="Healthy"
-          subtitle="All systems operational"
+          iconColor="text-emerald-600"
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { s3Service } from '@/lib/storage/s3Service';
+import { getSignedDownloadUrl } from '@/lib/storage/s3Service';
 import { prisma } from '@/lib/prisma';
 
 interface ThumbnailGenerationParams {
@@ -134,7 +134,7 @@ export async function getThumbnailUrlService(params: {
     }
 
     // Get signed URL for thumbnail
-    const url = await s3Service.getSignedDownloadUrl(document.thumbnailPath, 3600);
+    const url = await getSignedDownloadUrl(document.thumbnailPath, 3600);
 
     return { url };
   } catch (error) {

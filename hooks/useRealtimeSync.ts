@@ -52,13 +52,6 @@ export function useRealtimeSync<T>(
     shouldRetryOnError,
     errorRetryCount: maxRetries,
     errorRetryInterval: 1000,
-
-    // Optimization
-    cache: true,
-    compare: (a, b) => {
-      // Simple equality check for SWR cache
-      return JSON.stringify(a) === JSON.stringify(b);
-    },
   });
 
   // Handle connection state changes

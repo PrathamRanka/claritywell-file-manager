@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         documentId: result.id,
         documentType: type,
         storagePath,
-        mimeType,
+        mimeType: mimeType || undefined,
       }).catch((err) => console.error('Thumbnail generation failed:', err));
     }
 
