@@ -16,10 +16,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
-  // Public routes that don't need authentication
-  const publicRoutes = ['/login'];
+  let session = null;
+  
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error('Session retrieval error:', error);
+    // Continue without session if there's an error
+  }
 
   return (
     <html lang="en">
