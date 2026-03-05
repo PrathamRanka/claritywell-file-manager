@@ -65,8 +65,17 @@ export async function moveFolderItem(documentId: string, destinationFolderId: st
 }
 
 export async function listFolderItems(folderId: string, skip: number = 0, limit: number = 50) {
+  return listFolderItemsByDocumentWhere(folderId, { deletedAt: null }, skip, limit);
+}
+
+export async function listFolderItemsByDocumentWhere(
+  folderId: string,
+  documentWhere: Prisma.DocumentWhereInput,
+  skip: number = 0,
+  limit: number = 50
+) {
   return prisma.folderItem.findMany({
-    where: { folderId, document: { deletedAt: null } },
+    where: { folderId, document: documentWhere },
     include: {
       document: {
         select: {
@@ -82,5 +91,17 @@ export async function listFolderItems(folderId: string, skip: number = 0, limit:
     skip,
     take: limit,
     orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function countFolderItemsByDocumentWhere(
+  folderId: string,
+  documentWhere: Prisma.DocumentWhereInput
+) {
+  return prisma.folderItem.count({
+    where: {
+      folderId,
+      document: documentWhere,
+    },
   });
 }

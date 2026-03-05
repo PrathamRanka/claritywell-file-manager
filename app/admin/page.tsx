@@ -20,10 +20,11 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('users');
+  const isAdmin = status === 'authenticated' && session?.user?.role === 'ADMIN';
 
-  const { users, mutate: mutateUsers, isError: usersError } = useUsers();
-  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments();
-  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements();
+  const { users, mutate: mutateUsers, isError: usersError } = useUsers(isAdmin);
+  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments(isAdmin);
+  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements(isAdmin);
 
   // Check authentication and authorization
   if (status === 'loading') {
@@ -35,7 +36,7 @@ export default function AdminPage() {
     return <LoadingSpinner message="Redirecting to login..." />;
   }
 
-  if (session.user.role !== 'ADMIN') {
+  if (!isAdmin) {
     return (
       <div className="p-6 md:p-8 max-w-7xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">

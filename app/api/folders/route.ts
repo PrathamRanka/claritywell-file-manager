@@ -15,9 +15,8 @@ export async function GET(req: Request) {
       userRole: session.user.role || 'USER',
     });
 
-    // Return folders array directly for consistency
     const folders = result.data?.folders || [];
-    return apiSuccess(folders);
+    return apiSuccess({ folders });
   } catch (error) {
     console.error('GET Folders Error:', error);
     return apiError('Internal Server Error', 500);

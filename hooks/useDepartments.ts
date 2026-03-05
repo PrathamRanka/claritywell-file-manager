@@ -7,8 +7,8 @@ export interface Department {
   members: Array<{ id: string; name: string; email: string }>;
 }
 
-export function useDepartments() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/departments', fetcher, {
+export function useDepartments(enabled = true) {
+  const { data, error, mutate, isLoading } = useSWR<any>(enabled ? '/api/departments' : null, fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });

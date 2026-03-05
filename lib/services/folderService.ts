@@ -5,7 +5,8 @@ import {
   softDeleteFolder,
   createFolderItem,
   createFolder,
-  listFolderItems,
+  listFolderItemsByDocumentWhere,
+  countFolderItemsByDocumentWhere,
 } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
@@ -18,10 +19,13 @@ export async function listFoldersService(params: { userId: string; userRole: str
   const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
 
   const folders = await listFoldersWithDocumentCount(docWhere);
+  const isAdmin = userRole === 'ADMIN';
 
   return {
     data: {
-      folders: folders.map((f: any) => ({
+      folders: folders
+        .filter((f: any) => isAdmin || f.createdById === userId || f.items.length > 0)
+        .map((f: any) => ({
         id: f.id,
         name: f.name,
         parentId: f.parentId,
@@ -115,11 +119,21 @@ export async function listFolderItemsService(params: {
   const folder = await findFolder(folderId);
   if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
 
+  const userDepartmentIds = await getUserDepartmentIds(userId);
+  const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
+
   if (!canManageFolder(userId, folder, userRole)) {
-    return { error: 'Forbidden', status: 403 };
+    const visibleItemCount = await countFolderItemsByDocumentWhere(folderId, docWhere);
+    if (visibleItemCount === 0) {
+      return { error: 'Forbidden', status: 403 };
+    }
   }
 
-  const folderItems = await listFolderItems(folderId, skip, limit);
+  const effectiveDocWhere = canManageFolder(userId, folder, userRole)
+    ? { deletedAt: null }
+    : docWhere;
+
+  const folderItems = await listFolderItemsByDocumentWhere(folderId, effectiveDocWhere, skip, limit);
   
   // Extract documents from folder items
   const items = folderItems.map((item: any) => item.document).filter(Boolean);
@@ -144,7 +158,12 @@ export async function getFolderService(params: {
   if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
 
   if (!canManageFolder(userId, folder, userRole)) {
-    return { error: 'Forbidden', status: 403 };
+    const userDepartmentIds = await getUserDepartmentIds(userId);
+    const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
+    const visibleItemCount = await countFolderItemsByDocumentWhere(folderId, docWhere);
+    if (visibleItemCount === 0) {
+      return { error: 'Forbidden', status: 403 };
+    }
   }
 
   return {

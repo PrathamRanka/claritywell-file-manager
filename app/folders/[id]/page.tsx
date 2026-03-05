@@ -24,8 +24,8 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const {  page, pageSize } = usePagination();
   const [uploads, setUploads] = useState<Map<string, UploadProgress>>(new Map());
 
-  const { folder, isLoading: folderLoading } = useFolder(folderId);
-  const { items: documentItems, total, mutate } = useFolderItems(folderId, page, pageSize);
+  const { folder, isLoading: folderLoading, isError: folderError } = useFolder(folderId);
+  const { items: documentItems, total, mutate, isError: itemsError } = useFolderItems(folderId, page, pageSize);
   const { copy, cut } = useClipboardStore();
   const contextMenu = useContextMenu<string>();
 
@@ -216,6 +216,16 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   if (folderLoading) {
     return <LoadingSpinner message="Loading folder..." />;
+  }
+
+  if (folderError || itemsError) {
+    return (
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          Unable to open this folder. You may not have permission to view its contents.
+        </div>
+      </div>
+    );
   }
 
   return (

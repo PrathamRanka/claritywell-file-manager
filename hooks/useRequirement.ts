@@ -32,8 +32,8 @@ export function useRequirement(requirementId: string) {
   };
 }
 
-export function useRequirements() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/requirements', fetcher, {
+export function useRequirements(enabled = true) {
+  const { data, error, mutate, isLoading } = useSWR<any>(enabled ? '/api/requirements' : null, fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });

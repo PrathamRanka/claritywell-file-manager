@@ -10,8 +10,8 @@ export interface User {
   departments: Array<{ id: string; name: string }>;
 }
 
-export function useUsers() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/users', fetcher, {
+export function useUsers(enabled = true) {
+  const { data, error, mutate, isLoading } = useSWR<any>(enabled ? '/api/users' : null, fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });
