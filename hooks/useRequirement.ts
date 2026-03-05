@@ -33,10 +33,22 @@ export function useRequirement(requirementId: string) {
 }
 
 export function useRequirements() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/requirements', fetcher);
+  const { data, error, mutate, isLoading } = useSWR<any>('/api/requirements', fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  const requirements =
-    data?.data?.requirements ?? data?.requirements ?? data ?? [];
+  // Safely extract requirements array from various response formats
+  let requirements = [];
+  if (data) {
+    if (Array.isArray(data)) {
+      requirements = data;
+    } else if (data.data?.requirements && Array.isArray(data.data.requirements)) {
+      requirements = data.data.requirements;
+    } else if (data.requirements && Array.isArray(data.requirements)) {
+      requirements = data.requirements;
+    }
+  }
 
   return {
     requirements,

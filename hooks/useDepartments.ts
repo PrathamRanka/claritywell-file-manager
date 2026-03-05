@@ -8,14 +8,24 @@ export interface Department {
 }
 
 export function useDepartments() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/departments', fetcher);
+  const { data, error, mutate, isLoading } = useSWR<any>('/api/departments', fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  const departments: Department[] = (
-    data?.data?.departments ??
-    data?.departments ??
-    data ??
-    []
-  ).map((d: any) => ({
+  // Safely extract departments array from various response formats
+  let rawDepartments = [];
+  if (data) {
+    if (Array.isArray(data)) {
+      rawDepartments = data;
+    } else if (data.data?.departments && Array.isArray(data.data.departments)) {
+      rawDepartments = data.data.departments;
+    } else if (data.departments && Array.isArray(data.departments)) {
+      rawDepartments = data.departments;
+    }
+  }
+
+  const departments: Department[] = rawDepartments.map((d: any) => ({
     id: d.id,
     name: d.name,
     members: Array.isArray(d.members) ? d.members : [],

@@ -11,9 +11,24 @@ export interface User {
 }
 
 export function useUsers() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/users', fetcher);
+  const { data, error, mutate, isLoading } = useSWR<any>('/api/users', fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  const users: User[] = (data?.data?.users ?? data?.users ?? data ?? []).map((u: any) => ({
+  // Safely extract users array from various response formats
+  let rawUsers = [];
+  if (data) {
+    if (Array.isArray(data)) {
+      rawUsers = data;
+    } else if (data.data?.users && Array.isArray(data.data.users)) {
+      rawUsers = data.data.users;
+    } else if (data.users && Array.isArray(data.users)) {
+      rawUsers = data.users;
+    }
+  }
+
+  const users: User[] = rawUsers.map((u: any) => ({
     id: u.id,
     name: u.name,
     email: u.email,

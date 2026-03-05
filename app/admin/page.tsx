@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Users, Building2, FileText, Activity } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRequirements } from '@/hooks/useRequirement';
@@ -10,15 +12,61 @@ import { DepartmentsTab } from '@/components/features/admin/DepartmentsTab';
 import { RequirementsTab } from '@/components/features/admin/RequirementsTab';
 import { AuditLogsTab } from '@/components/features/admin/AuditLogsTab';
 import { AdminDashboardOverview } from '@/components/features/admin/AdminDashboardOverview';
+import { LoadingSpinner } from '@/components/ui';
 
 type TabType = 'users' | 'departments' | 'requirements' | 'audit';
 
 export default function AdminPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('users');
 
-  const { users, mutate: mutateUsers } = useUsers();
-  const { departments, mutate: mutateDepartments } = useDepartments();
-  const { requirements, mutate: mutateRequirements } = useRequirements();
+  const { users, mutate: mutateUsers, isError: usersError } = useUsers();
+  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments();
+  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements();
+
+  // Check authentication and authorization
+  if (status === 'loading') {
+    return <LoadingSpinner />;
+  }
+
+  if (!session?.user) {
+    router.push('/login');
+    return <LoadingSpinner message="Redirecting to login..." />;
+  }
+
+  if (session.user.role !== 'ADMIN') {
+    return (
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-700">
+            You do not have permission to access this page. Admin privileges are required.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle API errors
+  if (usersError || departmentsError || requirementsError) {
+    return (
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-yellow-800 mb-2">Loading Error</h2>
+          <p className="text-yellow-700 mb-4">
+            Some data could not be loaded. Please try refreshing the page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'users' as TabType, label: 'Users', icon: Users },
