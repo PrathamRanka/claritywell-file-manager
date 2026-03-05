@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/auth';
 import './globals.css';
 import { LayoutContent } from './layout-content';
+import { Providers } from './providers';
 import { Toaster } from 'sonner';
 
 export const metadata = {
@@ -23,15 +24,17 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        {session ? (
-          <LayoutContent user={session.user}>
-            {children}
-          </LayoutContent>
-        ) : (
-          <>
-            {children}
-          </>
-        )}
+        <Providers>
+          {session ? (
+            <LayoutContent user={session.user}>
+              {children}
+            </LayoutContent>
+          ) : (
+            <>
+              {children}
+            </>
+          )}
+        </Providers>
         <Toaster position="top-right" richColors />
       </body>
     </html>

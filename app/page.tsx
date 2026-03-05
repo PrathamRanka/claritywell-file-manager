@@ -1,9 +1,11 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { Users, FileText, Building2, Activity, TrendingUp, Clock, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -42,13 +44,6 @@ interface Requirement {
   status: string;
   department: {
     name: string;
-  };
-}
-
-interface DashboardPageProps {
-  user: {
-    role: string;
-    id: string;
   };
 }
 
@@ -285,19 +280,74 @@ function UserDashboard({ userId }: { userId: string }) {
   );
 }
 
-export default function DashboardPage({ user }: DashboardPageProps) {
-  return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">
-          {user.role === 'ADMIN' ? 'System overview and recent activity' : 'Your documents and requirements'}
-        </p>
-      </div>
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-      {/* Content based on role */}
-      {user.role === 'ADMIN' ? <AdminDashboard /> : <UserDashboard userId={user.id} />}
+  if (status === 'loading') {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <p className="text-xl font-semibold text-slate-900">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session?.user) {
+    router.push('/login');
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <p className="text-xl font-semibold text-slate-900">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const user = session.user as any;
+
+  return (
+    <div className="w-full bg-white text-slate-900">
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 border-b pb-8">
+          <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+          <p className="text-slate-600 text-lg">
+            {user.role === 'ADMIN' ? 'System overview and recent activity' : 'Your documents and requirements'}
+          </p>
+          <p className="text-slate-500 mt-2">Welcome, {user.name || user.email}</p>
+        </div>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Link href="/admin" className="p-4 border rounded-lg hover:border-purple-500 hover:shadow-md transition-all bg-slate-50">
+            <div className="text-2xl mb-2">⚙️</div>
+            <h3 className="font-semibold">Admin Panel</h3>
+            <p className="text-sm text-slate-600">Manage users</p>
+          </Link>
+          <Link href="/documents" className="p-4 border rounded-lg hover:border-blue-500 hover:shadow-md transition-all bg-slate-50">
+            <div className="text-2xl mb-2">📄</div>
+            <h3 className="font-semibold">Documents</h3>
+            <p className="text-sm text-slate-600">All files</p>
+          </Link>
+          <Link href="/folders" className="p-4 border rounded-lg hover:border-green-500 hover:shadow-md transition-all bg-slate-50">
+            <div className="text-2xl mb-2">📁</div>
+            <h3 className="font-semibold">Folders</h3>
+            <p className="text-sm text-slate-600">Browse</p>
+          </Link>
+          <Link href="/requirements" className="p-4 border rounded-lg hover:border-orange-500 hover:shadow-md transition-all bg-slate-50">
+            <div className="text-2xl mb-2">✓</div>
+            <h3 className="font-semibold">Requirements</h3>
+            <p className="text-sm text-slate-600">Track</p>
+          </Link>
+        </div>
+
+        {/* Content based on role */}
+        <div className="mt-8">
+          {user.role === 'ADMIN' ? <AdminDashboard /> : <UserDashboard userId={user.id} />}
+        </div>
+      </div>
     </div>
   );
 }
