@@ -6,6 +6,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  'aria-label'?: string;
 }
 
 export function Button({
@@ -16,6 +17,7 @@ export function Button({
   children,
   className = '',
   disabled,
+  'aria-label': ariaLabel,
   ...props
 }: ButtonProps) {
   const baseClasses = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed';
@@ -37,6 +39,8 @@ export function Button({
     <button
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       disabled={disabled || isLoading}
+      aria-label={ariaLabel}
+      aria-busy={isLoading}
       {...props}
     >
       {isLoading ? (

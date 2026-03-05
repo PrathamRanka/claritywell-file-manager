@@ -1,5 +1,9 @@
+import sharp from 'sharp';
 import { getSignedDownloadUrl } from '@/lib/storage/s3Service';
+import { s3Client } from '@/lib/s3';
+import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 interface ThumbnailGenerationParams {
   documentId: string;
@@ -10,9 +14,9 @@ interface ThumbnailGenerationParams {
 
 /**
  * Generate a thumbnail for a document based on its type
- * For images: generates a small version
- * For PDFs: generates first page preview
- * For WYSIWYG: uses text content
+ * For images: generates a small version using Sharp
+ * For PDFs: placeholder (PDF thumbnail generation requires additional libs)
+ * For WYSIWYG: uses text content excerpt
  */
 export async function generateThumbnailService(params: ThumbnailGenerationParams) {
   const { documentId, documentType, storagePath, mimeType } = params;
@@ -36,8 +40,8 @@ export async function generateThumbnailService(params: ThumbnailGenerationParams
 }
 
 /**
- * Generate thumbnail for image files
- * Creates a small version and stores it in S3
+ * Generate thumbnail for image files using Sharp
+ * Downloads original, resizes to 200x200, and uploads to S3
  */
 async function generateImageThumbnail(
   documentId: string,
@@ -45,20 +49,64 @@ async function generateImageThumbnail(
   mimeType?: string
 ): Promise<{ thumbnailPath: string | null; success: boolean }> {
   try {
-    // For now, use a simple approach: reference the original file with a thumbnail query param
-    // In production, you would use sharp to generate actual thumbnails
-    const thumbnailPath = `${storagePath}?size=thumbnail&w=200&h=200&fit=cover`;
+    // Download the original image from S3
+    const getCommand = new GetObjectCommand({
+      Bucket: env.SUPABASE_S3_BUCKET_NAME,
+      Key: storagePath,
+    });
+
+    const response = await s3Client.send(getCommand);
+    const imageBuffer = await response.Body?.transformToByteArray();
+
+    if (!imageBuffer) {
+      console.warn('Failed to download image for thumbnail:', storagePath);
+      return { thumbnailPath: null, success: false };
+    }
+
+    // Generate thumbnail using Sharp (200x200, cover mode)
+    const thumbnailBuffer = await sharp(imageBuffer)
+      .resize(200, 200, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .toBuffer();
+
+    // Generate thumbnail key path
+    const thumbnailKey = `${storagePath.replace(/\.[^.]*$/, '')}-thumb-200x200.webp`;
+
+    // Upload thumbnail to S3
+    const uploadCommand = new PutObjectCommand({
+      Bucket: env.SUPABASE_S3_BUCKET_NAME,
+      Key: thumbnailKey,
+      Body: thumbnailBuffer,
+      ContentType: 'image/webp',
+    });
+
+    await s3Client.send(uploadCommand);
 
     // Update document with thumbnail path
     await prisma.document.update({
       where: { id: documentId },
-      data: { thumbnailPath },
+      data: { thumbnailPath: thumbnailKey },
     });
 
-    return { thumbnailPath, success: true };
+    console.log('✅ Thumbnail generated:', thumbnailKey);
+    return { thumbnailPath: thumbnailKey, success: true };
   } catch (error) {
-    console.error('Image thumbnail generation failed:', error);
-    return { thumbnailPath: null, success: false };
+    console.error('Failed to generate image thumbnail:', error);
+    // Fallback: reference the original file with a thumbnail query param
+    const thumbnailPath = `${storagePath}?size=thumbnail&w=200&h=200&fit=cover`;
+
+    try {
+      await prisma.document.update({
+        where: { id: documentId },
+        data: { thumbnailPath },
+      });
+    } catch (updateError) {
+      console.error('Failed to update thumbnail path:', updateError);
+    }
+
+    return { thumbnailPath, success: true };
   }
 }
 

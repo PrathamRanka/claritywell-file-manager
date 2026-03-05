@@ -38,14 +38,15 @@ export function DocumentGrid({ documents, isLoading, onContextMenu }: DocumentGr
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
       {documents.map((doc) => (
         <div
           key={doc.id}
-          className="group bg-surface border border-border rounded-lg hover:shadow-md transition-all overflow-hidden"
+          className="group bg-surface border border-border rounded-lg hover:shadow-md transition-all overflow-hidden focus-within:ring-2 focus-within:ring-accent"
           onContextMenu={onContextMenu ? (e) => onContextMenu(e, doc.id) : undefined}
+          role="listitem"
         >
-          <Link href={`/documents/${doc.id}`} className="block p-4">
+          <Link href={`/documents/${doc.id}`} className="block p-4" aria-label={`Open document: ${doc.title}`}>
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <FileText className="w-5 h-5 text-accent flex-shrink-0" />
@@ -57,7 +58,8 @@ export function DocumentGrid({ documents, isLoading, onContextMenu }: DocumentGr
                     e.preventDefault();
                     onContextMenu(e, doc.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:bg-muted rounded transition-opacity focus-ring"
+                  aria-label={`Document options for ${doc.title}`}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
