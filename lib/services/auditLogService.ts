@@ -3,10 +3,6 @@ import {
   countAuditLogs,
 } from '@/lib/repositories/auditLogRepository';
 
-/**
- * Lists audit logs with optional filters, paginated (admin-only check at route level).
- * Logic copied verbatim from audit-log/route.ts.
- */
 export async function listAuditLogsService(params: {
   userId?: string | null;
   documentId?: string | null;

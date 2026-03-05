@@ -1,12 +1,7 @@
-import { prisma } from '@/lib/prisma';
 import { findFolder, findFolderItem, moveFolderItem, createFolderItem } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { canMoveOrDeleteDocument } from '@/lib/permissions';
 
-/**
- * Copies or cuts a list of documents to a destination folder.
- * Logic copied verbatim from clipboard/paste/route.ts.
- */
 export async function clipboardPasteService(params: {
   userId: string;
   userRole: string;
@@ -39,10 +34,8 @@ export async function clipboardPasteService(params: {
       }
 
       if (action === 'cut') {
-        // Delete all existing folder associations and move to new folder
         await moveFolderItem(docId, destinationFolderId);
       } else if (action === 'copy') {
-        // Add to new folder, ignore if already exists
         const exists = await findFolderItem(destinationFolderId, docId);
         if (!exists) {
           await createFolderItem(destinationFolderId, docId);
@@ -52,7 +45,6 @@ export async function clipboardPasteService(params: {
       succeeded.push(docId);
     } catch (err: any) {
       if (err?.code === 'P2002') {
-        // Already exists in destination
         failed.push({ id: docId, reason: 'Already in destination folder' });
       } else {
         failed.push({ id: docId, reason: 'Internal error' });

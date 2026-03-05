@@ -22,10 +22,6 @@ import {
 } from '@/lib/permissions';
 import { Prisma } from '@/prisma/generated';
 
-/**
- * Shapes a document for safe external exposure.
- * Copied verbatim from mapSafeDocument in documents/[id]/route.ts.
- */
 export function mapSafeDocument(doc: any) {
   return {
     id: doc.id,
@@ -42,10 +38,6 @@ export function mapSafeDocument(doc: any) {
   };
 }
 
-/**
- * Creates a document with folder association and audit log inside a transaction.
- * Logic copied verbatim from documents/create/route.ts.
- */
 export async function createDocumentService(params: {
   userId: string;
   title: string;
@@ -75,10 +67,6 @@ export async function createDocumentService(params: {
   return { id: newDocument.id, title: newDocument.title };
 }
 
-/**
- * Lists documents visible to the user, with optional search and folder filter.
- * Logic copied verbatim from documents/route.ts.
- */
 export async function listDocumentsService(params: {
   userId: string;
   userRole: string;
@@ -126,10 +114,6 @@ export async function listDocumentsService(params: {
   return { data: { documents, total, page, totalPages: Math.ceil(total / limit) } };
 }
 
-/**
- * Gets a single document (with signed URL + comments) for authorised users.
- * Logic copied verbatim from documents/[id]/route.ts GET.
- */
 export async function getDocumentService(params: {
   documentId: string;
   userId: string;
@@ -161,10 +145,6 @@ export async function getDocumentService(params: {
   };
 }
 
-/**
- * Updates a document's editable fields with sanitization and audit log.
- * Logic copied verbatim from documents/[id]/route.ts PATCH.
- */
 export async function updateDocumentService(params: {
   documentId: string;
   userId: string;
@@ -207,10 +187,6 @@ export async function updateDocumentService(params: {
   return { data: { document: mapSafeDocument(updatedDocument) } };
 }
 
-/**
- * Soft-deletes a document and writes an audit log.
- * Logic copied verbatim from documents/[id]/route.ts DELETE.
- */
 export async function deleteDocumentService(params: {
   documentId: string;
   userId: string;
@@ -226,32 +202,22 @@ export async function deleteDocumentService(params: {
   }
 
   await softDeleteDocument(documentId);
-
   await createAuditLog({ action: 'DELETE', userId, documentId });
 
   return { data: { success: true } };
 }
 
-/**
- * Restores a soft-deleted document (admin only check is done in the route).
- * Logic copied verbatim from documents/[id]/restore/route.ts.
- */
 export async function restoreDocumentService(documentId: string, userId: string) {
   const document = await findDocumentDeletedAt(documentId);
   if (!document) return { error: 'Not Found', status: 404 };
   if (!document.deletedAt) return { error: 'Document is not deleted', status: 400 };
 
   const restoredDocument = await restoreDocument(documentId);
-
   await createAuditLog({ action: 'RESTORE', userId, documentId });
 
   return { data: { document: restoredDocument } };
 }
 
-/**
- * Gets a presigned thumbnail URL for a document the user can view.
- * Logic copied verbatim from documents/[id]/thumbnail/route.ts.
- */
 export async function getThumbnailUrlService(params: {
   documentId: string;
   userId: string;

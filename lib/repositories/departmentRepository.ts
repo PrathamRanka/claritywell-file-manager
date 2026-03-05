@@ -1,8 +1,5 @@
 import { prisma } from '@/lib/prisma';
 
-/**
- * Lists departments with pagination. Logic from departments/route.ts GET.
- */
 export async function listDepartments(skip: number, limit: number) {
   return prisma.department.findMany({
     orderBy: { createdAt: 'desc' },
@@ -12,9 +9,6 @@ export async function listDepartments(skip: number, limit: number) {
   });
 }
 
-/**
- * Creates a new department. Logic from departments/route.ts POST.
- */
 export async function createDepartment(name: string) {
   return prisma.department.create({
     data: { name },
@@ -22,10 +16,6 @@ export async function createDepartment(name: string) {
   });
 }
 
-/**
- * Lists members of a department with pagination.
- * Logic from departments/[id]/members/route.ts.
- */
 export async function listDepartmentMembers(departmentId: string, skip: number, limit: number) {
   return prisma.departmentMember.findMany({
     where: { departmentId },
@@ -37,10 +27,6 @@ export async function listDepartmentMembers(departmentId: string, skip: number, 
   });
 }
 
-/**
- * Removes a user from a department.
- * Logic from departments/[id]/members/[userId]/route.ts DELETE.
- */
 export async function removeDepartmentMember(userId: string, departmentId: string) {
   return prisma.departmentMember.delete({
     where: { userId_departmentId: { userId, departmentId } },

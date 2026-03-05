@@ -4,16 +4,11 @@ import {
   updateFolder,
   softDeleteFolder,
   createFolderItem,
-  findFolderItem,
 } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { getVisibleDocumentsWhereClause, canManageFolder, canViewDocument } from '@/lib/permissions';
 
-/**
- * Lists all visible folders with document counts per folder.
- * Logic copied verbatim from folders/route.ts.
- */
 export async function listFoldersService(params: { userId: string; userRole: string }) {
   const { userId, userRole } = params;
 
@@ -34,10 +29,6 @@ export async function listFoldersService(params: { userId: string; userRole: str
   };
 }
 
-/**
- * Updates a folder's name.
- * Logic copied verbatim from folders/[id]/route.ts PATCH.
- */
 export async function updateFolderService(params: {
   folderId: string;
   userId: string;
@@ -57,10 +48,6 @@ export async function updateFolderService(params: {
   return { data: { folder: updatedFolder } };
 }
 
-/**
- * Soft-deletes a folder and its items.
- * Logic copied verbatim from folders/[id]/route.ts DELETE.
- */
 export async function deleteFolderService(params: {
   folderId: string;
   userId: string;
@@ -79,10 +66,6 @@ export async function deleteFolderService(params: {
   return { data: { success: true } };
 }
 
-/**
- * Adds a document to a folder (user must be able to view the document).
- * Logic copied verbatim from folders/[id]/items/route.ts.
- */
 export async function addFolderItemService(params: {
   folderId: string;
   userId: string;

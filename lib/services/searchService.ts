@@ -3,10 +3,6 @@ import { getVisibleDocumentsWhereClause } from '@/lib/permissions';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { Prisma } from '@/prisma/generated';
 
-/**
- * Searches documents and comments for the given query, scoped to visible content.
- * Logic copied verbatim from search/route.ts.
- */
 export async function searchService(params: {
   userId: string;
   userRole: string;
@@ -25,7 +21,6 @@ export async function searchService(params: {
     userDepartmentIds
   );
 
-  // Safely combine the search with the visible documents clause
   const documentWhere: Prisma.DocumentWhereInput = {
     AND: [
       docBaseWhere,

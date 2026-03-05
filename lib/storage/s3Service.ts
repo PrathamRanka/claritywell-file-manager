@@ -3,10 +3,6 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '@/lib/s3';
 import { env } from '@/lib/env';
 
-/**
- * Returns a presigned GET URL for downloading a file from S3.
- * Logic copied verbatim from documents/[id]/route.ts and documents/[id]/thumbnail/route.ts.
- */
 export async function getSignedDownloadUrl(key: string, expiresIn: number): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: env.SUPABASE_S3_BUCKET_NAME,
@@ -15,10 +11,6 @@ export async function getSignedDownloadUrl(key: string, expiresIn: number): Prom
   return getSignedUrl(s3Client, command, { expiresIn });
 }
 
-/**
- * Returns a presigned PUT URL for uploading a file to S3.
- * Logic copied verbatim from uploads/request/route.ts.
- */
 export async function getSignedUploadUrl(
   key: string,
   contentType: string,

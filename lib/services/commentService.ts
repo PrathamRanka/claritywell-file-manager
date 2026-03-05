@@ -3,10 +3,6 @@ import { findComment, createComment } from '@/lib/repositories/commentRepository
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { canCommentDocument } from '@/lib/permissions';
 
-/**
- * Creates a comment on a document for an authorised user.
- * Logic copied verbatim from documents/[id]/comment/route.ts.
- */
 export async function createCommentService(params: {
   documentId: string;
   userId: string;

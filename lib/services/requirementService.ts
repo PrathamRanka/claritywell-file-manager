@@ -9,10 +9,6 @@ import { getAccessibleDepartments, canViewRequirement } from '@/lib/permissions'
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { prisma } from '@/lib/prisma';
 
-/**
- * Lists requirements accessible to the user, with optional department filter.
- * Logic copied verbatim from requirements/route.ts GET.
- */
 export async function listRequirementsService(params: {
   userId: string;
   userRole: string;
@@ -31,7 +27,6 @@ export async function listRequirementsService(params: {
   }
 
   if (departmentId) {
-    // If user filtered by dept, ensure they have access to it
     if (userRole !== 'ADMIN' && !accessibleDeptIds.includes(departmentId)) {
       return { data: { requirements: [] } };
     }
@@ -42,10 +37,6 @@ export async function listRequirementsService(params: {
   return { data: { requirements } };
 }
 
-/**
- * Gets a single requirement with its related documents.
- * Logic copied verbatim from requirements/[id]/route.ts GET.
- */
 export async function getRequirementService(params: {
   requirementId: string;
   userId: string;
@@ -65,10 +56,6 @@ export async function getRequirementService(params: {
   return { data: { requirement } };
 }
 
-/**
- * Creates a new requirement after validating the department exists.
- * Logic copied verbatim from requirements/route.ts POST.
- */
 export async function createRequirementService(params: {
   userId: string;
   clientName: string;
@@ -92,10 +79,6 @@ export async function createRequirementService(params: {
   return { data: { requirement } };
 }
 
-/**
- * Hard-deletes a requirement (admin-only check done at route level).
- * Logic copied verbatim from requirements/[id]/route.ts DELETE.
- */
 export async function deleteRequirementService(requirementId: string) {
   await deleteRequirement(requirementId);
   return { data: { success: true } };

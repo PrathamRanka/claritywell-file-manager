@@ -1,10 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/prisma/generated';
 
-/**
- * Fetches a document by ID including its ACL and requirement relations.
- * Exact query copied from documents/[id]/route.ts, documents/[id]/acl/route.ts, etc.
- */
 export async function findDocumentWithRelations(id: string) {
   return prisma.document.findUnique({
     where: { id },
@@ -12,9 +8,6 @@ export async function findDocumentWithRelations(id: string) {
   });
 }
 
-/**
- * Fetches a document selecting only its ownerId (used for ACL revoke permission check).
- */
 export async function findDocumentOwner(id: string) {
   return prisma.document.findUnique({
     where: { id },
@@ -22,9 +15,6 @@ export async function findDocumentOwner(id: string) {
   });
 }
 
-/**
- * Fetches a document selecting only deletedAt (used for restore).
- */
 export async function findDocumentDeletedAt(id: string) {
   return prisma.document.findUnique({
     where: { id },
@@ -32,10 +22,6 @@ export async function findDocumentDeletedAt(id: string) {
   });
 }
 
-/**
- * Creates a document, optionally adding it to a folder and writing an audit log —
- * all inside a single Prisma transaction. Logic copied verbatim from documents/create/route.ts.
- */
 export async function createDocument(data: {
   title: string;
   type: string;
@@ -71,9 +57,6 @@ export async function createDocument(data: {
   });
 }
 
-/**
- * Updates a document's fields. Logic copied verbatim from documents/[id]/route.ts PATCH.
- */
 export async function updateDocument(
   id: string,
   data: {
@@ -86,9 +69,6 @@ export async function updateDocument(
   return prisma.document.update({ where: { id }, data: data as any });
 }
 
-/**
- * Soft-deletes a document by setting deletedAt. Logic from documents/[id]/route.ts DELETE.
- */
 export async function softDeleteDocument(id: string) {
   return prisma.document.update({
     where: { id },
@@ -96,9 +76,6 @@ export async function softDeleteDocument(id: string) {
   });
 }
 
-/**
- * Restores a soft-deleted document. Logic from documents/[id]/restore/route.ts.
- */
 export async function restoreDocument(id: string) {
   return prisma.document.update({
     where: { id },
@@ -107,10 +84,6 @@ export async function restoreDocument(id: string) {
   });
 }
 
-/**
- * Lists documents with permission-scoped where clause.
- * Logic from documents/route.ts.
- */
 export async function listDocuments(where: Prisma.DocumentWhereInput, skip: number, limit: number) {
   return prisma.document.findMany({
     where,
@@ -130,16 +103,10 @@ export async function listDocuments(where: Prisma.DocumentWhereInput, skip: numb
   });
 }
 
-/**
- * Counts documents with the given where clause.
- */
 export async function countDocuments(where: Prisma.DocumentWhereInput) {
   return prisma.document.count({ where });
 }
 
-/**
- * Counts documents matching a compound where clause — used for thumbnail permission check.
- */
 export async function countDocumentsWhere(where: Prisma.DocumentWhereInput) {
   return prisma.document.count({ where });
 }

@@ -1,9 +1,5 @@
 import { listUsers, countUsers, updateUser } from '@/lib/repositories/userRepository';
 
-/**
- * Lists all users with pagination (admin-only check done at route level).
- * Logic copied verbatim from users/route.ts.
- */
 export async function listUsersService(params: { page: number; limit: number }) {
   const { page, limit } = params;
   const skip = (page - 1) * limit;
@@ -20,10 +16,6 @@ export async function listUsersService(params: { page: number; limit: number }) 
   };
 }
 
-/**
- * Updates a user's role or name (admin-only check done at route level).
- * Logic copied verbatim from users/[id]/route.ts.
- */
 export async function updateUserService(params: {
   userId: string;
   role?: string;

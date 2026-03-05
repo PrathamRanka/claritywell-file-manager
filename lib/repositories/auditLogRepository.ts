@@ -1,9 +1,5 @@
 import { prisma } from '@/lib/prisma';
 
-/**
- * Creates an audit log entry. Accepts an optional transaction client.
- * Logic extracted from every route that writes audit logs.
- */
 export async function createAuditLog(
   data: {
     action: string;
@@ -17,10 +13,6 @@ export async function createAuditLog(
   return client.auditLog.create({ data: data as any });
 }
 
-/**
- * Lists audit logs with optional filters, paginated.
- * Logic copied verbatim from audit-log/route.ts.
- */
 export async function listAuditLogs(where: any, skip: number, limit: number) {
   return prisma.auditLog.findMany({
     where,
@@ -33,9 +25,6 @@ export async function listAuditLogs(where: any, skip: number, limit: number) {
   });
 }
 
-/**
- * Counts audit logs matching the given where clause.
- */
 export async function countAuditLogs(where: any) {
   return prisma.auditLog.count({ where });
 }

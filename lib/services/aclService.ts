@@ -1,10 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/repositories/auditLogRepository';
 
-/**
- * Upserts ACL permissions for a user on a document.
- * Logic copied verbatim from documents/[id]/acl/route.ts.
- */
 export async function upsertAclService(params: {
   documentId: string;
   requesterId: string;
@@ -25,7 +21,6 @@ export async function upsertAclService(params: {
     return { error: 'Not Found', status: 404 };
   }
 
-  // Only owner or admin can manage ACL
   if (requesterRole !== 'ADMIN' && document.ownerId !== requesterId) {
     return { error: 'Forbidden', status: 403 };
   }
@@ -65,10 +60,6 @@ export async function upsertAclService(params: {
   return { data: { acl } };
 }
 
-/**
- * Revokes ACL for a specific user on a document.
- * Logic copied verbatim from documents/[id]/acl/[userId]/route.ts DELETE.
- */
 export async function revokeAclService(params: {
   documentId: string;
   requesterId: string;
@@ -84,7 +75,6 @@ export async function revokeAclService(params: {
 
   if (!document) return { error: 'Not Found', status: 404 };
 
-  // Only owner or admin can manage ACL
   if (requesterRole !== 'ADMIN' && document.ownerId !== requesterId) {
     return { error: 'Forbidden', status: 403 };
   }
