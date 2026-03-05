@@ -4,15 +4,12 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { FileText, Mail, Lock, AlertCircle } from 'lucide-react';
-import { z } from 'zod';
+import { FileText, Mail, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
+import { z } from 'zod';
+import { loginSchema } from '@/lib/constants/schemas';
+import { Input, Button } from '@/components/ui';
 
 type LoginForm = z.infer<typeof loginSchema>;
 
@@ -89,101 +86,46 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input
-                  {...register('email')}
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                  className={`
-                    w-full pl-10 pr-4 py-2.5 rounded-lg
-                    bg-muted/50 border transition-all
-                    focus:bg-surface focus-ring
-                    ${errors.email ? 'border-destructive' : 'border-transparent focus:border-border-strong'}
-                  `}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <div className="flex items-center gap-1.5 mt-1.5 text-destructive text-sm">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>{errors.email.message}</span>
-                </div>
-              )}
-            </div>
+            <Input
+              {...register('email')}
+              id="email"
+              type="email"
+              label="Email"
+              icon={Mail}
+              placeholder="name@company.com"
+              error={errors.email?.message}
+            />
 
             {/* Password field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input
-                  {...register('password')}
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className={`
-                    w-full pl-10 pr-4 py-2.5 rounded-lg
-                    bg-muted/50 border transition-all
-                    focus:bg-surface focus-ring
-                    ${errors.password ? 'border-destructive' : 'border-transparent focus:border-border-strong'}
-                  `}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.password && (
-                <div className="flex items-center gap-1.5 mt-1.5 text-destructive text-sm">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>{errors.password.message}</span>
-                </div>
-              )}
-            </div>
+            <Input
+              {...register('password')}
+              id="password"
+              type="password"
+              label="Password"
+              icon={Lock}
+              placeholder="••••••••"
+              error={errors.password?.message}
+            />
 
             {/* Submit button */}
-            <button
+            <Button
               type="submit"
+              className="w-full"
+              isLoading={isLoading}
               disabled={isLoading}
-              className="
-                w-full py-2.5 px-4 rounded-lg
-                bg-accent hover:bg-accent-hover
-                text-accent-foreground font-medium
-                transition-all duration-200
-                focus-ring
-                disabled:opacity-50 disabled:cursor-not-allowed
-                shadow-lg shadow-accent/25
-              "
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
-                  Signing in...
-                </span>
-              ) : (
-                'Sign in'
-              )}
-            </button>
+              Sign in
+            </Button>
           </form>
 
-          {/* Demo credentials hint */}
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              Demo: Use your registered email and password
-            </p>
+          {/* Test credentials */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Test Credentials:</p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Admin:</strong> admin@example.com / password123</p>
+              <p><strong>User:</strong> user@example.com / password123</p>
+            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>© 2026 DocVault. All rights reserved.</p>
         </div>
       </div>
     </div>

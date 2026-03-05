@@ -1,97 +1,39 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import useSWR from 'swr';
-import { Users, FileText, Building2, Activity, TrendingUp, Clock, FolderOpen } from 'lucide-react';
-import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+import { Users, FileText, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-interface DashboardStats {
-  totalUsers: number;
-  totalDocuments: number;
-  totalDepartments: number;
-}
-
-interface RecentActivity {
-  id: string;
-  action: string;
-  userId: string;
-  userName: string;
-  entityType: string;
-  entityId: string;
-  entityName: string;
-  createdAt: string;
-}
-
-interface Document {
-  id: string;
-  title: string;
-  createdAt: string;
-  owner: {
-    name: string;
-  };
-  visibility: string;
-}
-
-interface Requirement {
-  id: string;
-  clientName: string;
-  dueDate: string;
-  priority: string;
-  status: string;
-  department: {
-    name: string;
-  };
-}
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { StatCard, LoadingSpinner } from '@/components/ui';
 
 function AdminDashboard() {
-  const { data: stats, error } = useSWR<DashboardStats>('/api/dashboard/stats', fetcher);
+  const { stats, isError } = useDashboardStats();
 
   return (
     <div className="space-y-8">
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Total Users</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {stats?.totalUsers || '—'}
-              </p>
-            </div>
-            <Users className="w-6 h-6 text-blue-600" />
-          </div>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Total Documents</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {stats?.totalDocuments || '—'}
-              </p>
-            </div>
-            <FileText className="w-6 h-6 text-blue-600" />
-          </div>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Departments</p>
-              <p className="text-3xl font-bold text-slate-900">
-                {stats?.totalDepartments || '—'}
-              </p>
-            </div>
-            <Building2 className="w-6 h-6 text-green-600" />
-          </div>
-        </div>
+        <StatCard
+          title="Total Users"
+          value={stats?.totalUsers || '—'}
+          icon={Users}
+          iconColor="text-blue-600"
+        />
+        <StatCard
+          title="Total Documents"
+          value={stats?.totalDocuments || '—'}
+          icon={FileText}
+          iconColor="text-blue-600"
+        />
+        <StatCard
+          title="Departments"
+          value={stats?.totalDepartments || '—'}
+          icon={Building2}
+          iconColor="text-green-600"
+        />
       </div>
 
-      {error && (
+      {isError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
           Failed to load dashboard data
         </div>
@@ -115,24 +57,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   if (status === 'loading') {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-xl font-semibold text-slate-900">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!session?.user) {
     router.push('/login');
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-xl font-semibold text-slate-900">Redirecting...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Redirecting..." />;
   }
 
   const user = session.user as any;

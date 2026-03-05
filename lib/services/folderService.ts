@@ -123,7 +123,33 @@ export async function listFolderItemsService(params: {
   return {
     data: {
       items,
+      total: items.length,
       page,
+    },
+  };
+}
+
+export async function getFolderService(params: {
+  folderId: string;
+  userId: string;
+  userRole: string;
+}) {
+  const { folderId, userId, userRole } = params;
+
+  const folder = await findFolder(folderId);
+  if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
+
+  if (!canManageFolder(userId, folder, userRole)) {
+    return { error: 'Forbidden', status: 403 };
+  }
+
+  return {
+    data: {
+      folder: {
+        id: folder.id,
+        name: folder.name,
+        parentId: folder.parentId,
+      },
     },
   };
 }

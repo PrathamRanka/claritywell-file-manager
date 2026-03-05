@@ -19,7 +19,36 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+type FoldersApiResponse =
+  | FolderNode[]
+  | { folders?: FolderNode[] }
+  | { data?: { folders?: FolderNode[] } };
+
+const fetcher = async (url: string): Promise<FolderNode[]> => {
+  const res = await fetch(url);
+  const json = (await res.json()) as FoldersApiResponse;
+
+  if (Array.isArray(json)) {
+    return json;
+  }
+
+  if (json && typeof json === 'object' && 'folders' in json && Array.isArray(json.folders)) {
+    return json.folders;
+  }
+
+  if (
+    json &&
+    typeof json === 'object' &&
+    'data' in json &&
+    json.data &&
+    typeof json.data === 'object' &&
+    Array.isArray(json.data.folders)
+  ) {
+    return json.data.folders;
+  }
+
+  return [];
+};
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();

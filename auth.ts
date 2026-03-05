@@ -1,4 +1,4 @@
-import NextAuth, { type DefaultSession, type NextAuthConfig } from "next-auth";
+import { getServerSession, type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "./lib/prisma";
@@ -16,7 +16,7 @@ declare module "next-auth" {
   }
 }
 
-export const authOptions: NextAuthConfig = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -89,4 +89,7 @@ export const authOptions: NextAuthConfig = {
   }
 };
 
-export const { handlers, auth } = NextAuth(authOptions);
+// v4-compatible server auth helper used by route handlers.
+export async function auth() {
+  return getServerSession(authOptions);
+}
