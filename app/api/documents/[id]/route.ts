@@ -142,7 +142,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     await prisma.auditLog.create({
       data: {
-        action: 'UPDATE_DOCUMENT',
+        action: 'EDIT',
         userId: session.user.id,
         documentId: params.id,
         metadata: { updatedFields: Object.keys(parsed.data) }
@@ -175,7 +175,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     await prisma.auditLog.create({
       data: {
-        action: 'DELETE_DOCUMENT',
+        action: 'DELETE',
         userId: session.user.id,
         documentId: params.id,
       }

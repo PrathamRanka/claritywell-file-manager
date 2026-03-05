@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '../../../auth';
-import { prisma } from '../../../lib/prisma';
-import { createRequirementSchema } from '../../../lib/validations';
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { createRequirementSchema } from "@/lib/validations";
+import { getAccessibleDepartments } from "@/lib/permissions";
 
 export async function GET(req: Request) {
   try {
@@ -16,7 +17,23 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const skip = (page - 1) * limit;
 
-    const whereClause = departmentId ? { departmentId } : {};
+    const userId = session.user.id;
+    const userRole = session.user.role || 'USER';
+
+    const accessibleDeptIds = await getAccessibleDepartments(userId, prisma);
+
+    let whereClause: any = {};
+    if (userRole !== 'ADMIN') {
+      whereClause.departmentId = { in: accessibleDeptIds };
+    }
+
+    if (departmentId) {
+      // If user specifically filtered by dept, ensure they have access to it
+      if (userRole !== 'ADMIN' && !accessibleDeptIds.includes(departmentId)) {
+        return NextResponse.json({ data: { requirements: [] }, error: null });
+      }
+      whereClause.departmentId = departmentId;
+    }
 
     const requirements = await prisma.requirement.findMany({
       where: whereClause,

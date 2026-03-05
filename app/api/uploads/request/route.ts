@@ -5,19 +5,23 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { uploadRequestSchema } from "@/lib/validations";
 import { s3Client } from "@/lib/s3";
 import { env } from "@/lib/env";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit, checkUploadRateLimit } from "@/lib/rateLimit";
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    if (!rateLimit(`upload_${ip}`, 5, 60000)) {
-      return NextResponse.json({ data: null, error: 'Too Many Requests' }, { status: 429 });
-    }
-
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!checkUploadRateLimit(session.user.id)) {
+      return NextResponse.json({ data: null, error: "Upload limit exceeded" }, { status: 429 });
+    }
+
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    if (!rateLimit(`upload_request_${ip}`, 10, 60000)) {
+      return NextResponse.json({ data: null, error: 'Too Many Requests' }, { status: 429 });
     }
 
     const body = await req.json();

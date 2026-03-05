@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 
       await tx.auditLog.create({
         data: {
-          action: 'CREATE_DOCUMENT',
+          action: 'CREATE',
           userId: session.user.id,
           documentId: doc.id,
           metadata: { folderId }
