@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from '@/auth';
+import { removeDepartmentMemberService } from '@/lib/services/departmentService';
 
 export async function DELETE(
-  req: Request, 
+  req: Request,
   { params }: { params: { id: string; userId: string } }
 ) {
   try {
@@ -12,16 +12,8 @@ export async function DELETE(
       return NextResponse.json({ data: null, error: 'Forbidden' }, { status: 403 });
     }
 
-    await prisma.departmentMember.delete({
-      where: {
-        userId_departmentId: {
-          userId: params.userId,
-          departmentId: params.id,
-        }
-      }
-    });
-
-    return NextResponse.json({ data: { success: true }, error: null });
+    const result = await removeDepartmentMemberService(params.userId, params.id);
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('DELETE Dept Member Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });

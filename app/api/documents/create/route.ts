@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { createDocumentSchema } from "@/lib/validations";
-import DOMPurify from 'isomorphic-dompurify';
-import { rateLimit } from "@/lib/rateLimit";
+import { auth } from '@/auth';
+import { createDocumentSchema } from '@/lib/validations';
+import { rateLimit } from '@/lib/rateLimit';
+import { createDocumentService } from '@/lib/services/documentService';
 
 export async function POST(req: Request) {
   try {
@@ -25,60 +24,19 @@ export async function POST(req: Request) {
 
     const { title, type, visibility, storagePath, mimeType, contentHtml, requirementId, folderId } = parsed.data;
 
-    let safeContentHtml = contentHtml ? DOMPurify.sanitize(contentHtml) : null;
-    let contentExcerpt = null;
-
-    if (safeContentHtml) {
-      // Regex is strictly for plaintext excerpt extraction. HTML content is sterilized by DOMPurify.
-      contentExcerpt = safeContentHtml.replace(/<[^>]+>/g, '').substring(0, 250);
-    }
-
-    // Use Prisma transaction to ensure document creation, folder association, and audit log
-    const newDocument = await prisma.$transaction(async (tx) => {
-      const doc = await tx.document.create({
-        data: {
-          title,
-          type,
-          visibility,
-          storagePath,
-          mimeType,
-          contentHtml: safeContentHtml,
-          contentExcerpt,
-          ownerId: session.user.id,
-          requirementId,
-        }
-      });
-
-      if (folderId) {
-        await tx.folderItem.create({
-          data: {
-            folderId,
-            documentId: doc.id
-          }
-        });
-      }
-
-      await tx.auditLog.create({
-        data: {
-          action: 'CREATE',
-          userId: session.user.id,
-          documentId: doc.id,
-          metadata: { folderId }
-        }
-      });
-
-      return doc;
+    const result = await createDocumentService({
+      userId: session.user.id,
+      title,
+      type,
+      visibility,
+      storagePath,
+      mimeType,
+      contentHtml,
+      requirementId,
+      folderId,
     });
 
-    return NextResponse.json({ 
-      data: { 
-        document: {
-          id: newDocument.id,
-          title: newDocument.title,
-        } 
-      }, 
-      error: null 
-    });
+    return NextResponse.json({ data: { document: result }, error: null });
   } catch (error) {
     console.error('CREATE Document Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });

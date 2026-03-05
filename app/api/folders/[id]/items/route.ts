@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { addFolderItemSchema } from "@/lib/validations";
-import { canViewDocument } from "@/lib/permissions";
+import { auth } from '@/auth';
+import { addFolderItemSchema } from '@/lib/validations';
+import { addFolderItemService } from '@/lib/services/folderService';
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -11,47 +10,24 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const folder = await prisma.folder.findUnique({ where: { id: params.id } });
-    if (!folder) {
-      return NextResponse.json({ data: null, error: 'Folder not found' }, { status: 404 });
-    }
-
     const body = await req.json();
     const parsed = addFolderItemSchema.safeParse(body);
-
     if (!parsed.success) {
       return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
     }
 
-    const { documentId } = parsed.data;
-
-    const document = await prisma.document.findUnique({
-      where: { id: documentId },
-      include: { acl: true, requirement: true }
+    const result = await addFolderItemService({
+      folderId: params.id,
+      userId: session.user.id,
+      userRole: session.user.role || 'USER',
+      documentId: parsed.data.documentId,
     });
 
-    if (!document || document.deletedAt) {
-      return NextResponse.json({ data: null, error: 'Document not found' }, { status: 404 });
+    if (result.error) {
+      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
     }
 
-    const memberships = await prisma.departmentMember.findMany({
-      where: { userId: session.user.id },
-      select: { departmentId: true }
-    });
-    const userDepartmentIds = memberships.map((m: any) => m.departmentId);
-
-    if (!canViewDocument(session.user.id, document, session.user.role, userDepartmentIds)) {
-      return NextResponse.json({ data: null, error: 'Forbidden. Cannot view document.' }, { status: 403 });
-    }
-
-    const item = await prisma.folderItem.create({
-      data: {
-        folderId: params.id,
-        documentId,
-      }
-    });
-
-    return NextResponse.json({ data: { item }, error: null });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('ADD FolderItem Error:', error);
     // Handle unique constraint error if item already in folder

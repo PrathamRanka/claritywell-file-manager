@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from '@/auth';
+import { listDepartmentMembersService } from '@/lib/services/departmentService';
 
 export async function GET(
-  req: Request, 
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -15,20 +15,14 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const skip = (page - 1) * limit;
 
-    const members = await prisma.departmentMember.findMany({
-      where: { departmentId: params.id },
-      take: limit,
-      skip,
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, role: true }
-        }
-      }
+    const result = await listDepartmentMembersService({
+      departmentId: params.id,
+      page,
+      limit,
     });
 
-    return NextResponse.json({ data: { members }, error: null });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Dept Members Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });

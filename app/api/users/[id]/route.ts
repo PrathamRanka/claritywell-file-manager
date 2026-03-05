@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { updateUserSchema } from "@/lib/validations";
+import { auth } from '@/auth';
+import { updateUserSchema } from '@/lib/validations';
+import { updateUserService } from '@/lib/services/userService';
 
 export async function PATCH(
-  req: Request, 
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -17,13 +17,13 @@ export async function PATCH(
     const parsed = updateUserSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
 
-    const updatedUser = await prisma.user.update({
-      where: { id: params.id },
-      data: parsed.data,
-      select: { id: true, name: true, role: true }
+    const result = await updateUserService({
+      userId: params.id,
+      role: parsed.data.role,
+      name: parsed.data.name,
     });
 
-    return NextResponse.json({ data: { user: updatedUser }, error: null });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('PATCH User Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });

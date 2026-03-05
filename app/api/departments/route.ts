@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { createDepartmentSchema } from "@/lib/validations";
+import { auth } from '@/auth';
+import { createDepartmentSchema } from '@/lib/validations';
+import { listDepartmentsService, createDepartmentService } from '@/lib/services/departmentService';
 
 export async function GET(req: Request) {
   try {
@@ -13,20 +13,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const skip = (page - 1) * limit;
 
-    const departments = await prisma.department.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip,
-      select: {
-        id: true,
-        name: true,
-        createdAt: true
-      }
-    });
-
-    return NextResponse.json({ data: { departments }, error: null });
+    const result = await listDepartmentsService({ page, limit });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Departments Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
@@ -42,23 +31,12 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const parsed = createDepartmentSchema.safeParse(body);
-
     if (!parsed.success) {
       return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
     }
 
-    const { name } = parsed.data;
-
-    const department = await prisma.department.create({
-      data: { name },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true
-      }
-    });
-
-    return NextResponse.json({ data: { department }, error: null });
+    const result = await createDepartmentService(parsed.data.name);
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error: any) {
     console.error('CREATE Department Error:', error);
     if (error?.code === 'P2002') {

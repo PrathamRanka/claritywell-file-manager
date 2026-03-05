@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from '@/auth';
+import { listAuditLogsService } from '@/lib/services/auditLogService';
 
 export async function GET(req: Request) {
   try {
@@ -15,35 +15,10 @@ export async function GET(req: Request) {
     const action = searchParams.get('action');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (userId) where.userId = userId;
-    if (documentId) where.documentId = documentId;
-    if (action) where.action = action;
+    const result = await listAuditLogsService({ userId, documentId, action, page, limit });
 
-    const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
-        where,
-        take: limit,
-        skip,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: { select: { id: true, name: true, email: true } }
-        }
-      }),
-      prisma.auditLog.count({ where })
-    ]);
-
-    return NextResponse.json({ 
-      data: { 
-        logs, 
-        total, 
-        page, 
-        totalPages: Math.ceil(total / limit) 
-      }, 
-      error: null 
-    });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Audit Log Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });

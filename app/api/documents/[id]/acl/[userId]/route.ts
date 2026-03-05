@@ -1,46 +1,27 @@
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from '@/auth';
+import { revokeAclService } from '@/lib/services/aclService';
 
 export async function DELETE(
-  req: Request, 
+  req: Request,
   { params }: { params: { id: string; userId: string } }
 ) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
 
-    const document = await prisma.document.findUnique({
-      where: { id: params.id },
-      select: { ownerId: true }
+    const result = await revokeAclService({
+      documentId: params.id,
+      requesterId: session.user.id,
+      requesterRole: session.user.role || 'USER',
+      targetUserId: params.userId,
     });
 
-    if (!document) return NextResponse.json({ data: null, error: 'Not Found' }, { status: 404 });
-
-    // Only owner or admin can manage ACL
-    if (session.user.role !== 'ADMIN' && document.ownerId !== session.user.id) {
-      return NextResponse.json({ data: null, error: 'Forbidden' }, { status: 403 });
+    if (result.error) {
+      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
     }
 
-    await prisma.documentACL.delete({
-      where: {
-        documentId_userId: {
-          documentId: params.id,
-          userId: params.userId,
-        }
-      }
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        action: 'SHARE', // Or a new REVOKE action if preferred, but requirement said SHARE (action: SHARE) for upsert, taking liberty to use SHARE for revoke too or just generic log
-        userId: session.user.id,
-        documentId: params.id,
-        metadata: { targetUserId: params.userId, action: 'REVOKE' }
-      }
-    });
-
-    return NextResponse.json({ data: { success: true }, error: null });
+    return NextResponse.json({ data: result.data, error: null });
   } catch (error) {
     console.error('ACL DELETE Error:', error);
     return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
