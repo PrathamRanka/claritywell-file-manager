@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createCommentSchema } from '@/lib/validations';
-import { rateLimit } from '@/lib/rateLimit';
+import { checkCommentRateLimit } from '@/lib/rateLimit';
 import { createCommentService, listCommentsService } from '@/lib/services/commentService';
 
 export async function GET(
@@ -39,14 +39,16 @@ export async function GET(
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    if (!rateLimit(`comment_create_${ip}`, 15, 60000)) {
-      return NextResponse.json({ data: null, error: 'Too Many Requests' }, { status: 429 });
-    }
-
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!checkCommentRateLimit(session.user.id)) {
+      return NextResponse.json(
+        { data: null, error: 'Rate limit exceeded: 100 comments per hour' },
+        { status: 429 }
+      );
     }
 
     const body = await req.json();

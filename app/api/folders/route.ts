@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createFolderSchema } from '@/lib/validations';
+import { checkFolderCreationRateLimit } from '@/lib/rateLimit';
 import { listFoldersService, createFolderService } from '@/lib/services/folderService';
 
 export async function GET(req: Request) {
@@ -24,6 +25,13 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+
+    if (!checkFolderCreationRateLimit(session.user.id)) {
+      return NextResponse.json(
+        { data: null, error: 'Rate limit exceeded: 30 folders per hour' },
+        { status: 429 }
+      );
+    }
 
     const body = await req.json();
     const parsed = createFolderSchema.safeParse(body);

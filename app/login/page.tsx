@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -125,6 +126,16 @@ export default function LoginPage() {
               <p><strong>Admin:</strong> admin@example.com / password123</p>
               <p><strong>User:</strong> user@example.com / password123</p>
             </div>
+          </div>
+
+          {/* Signup link */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link href="/signup" className="font-medium text-accent hover:underline">
+                Sign up here
+              </Link>
+            </p>
           </div>
         </div>
       </div>

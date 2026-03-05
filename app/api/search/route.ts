@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { searchService } from '@/lib/services/searchService';
+import { advancedSearchService } from '@/lib/services/searchServiceAdvanced';
 
 export async function GET(req: Request) {
   try {
@@ -14,16 +14,17 @@ export async function GET(req: Request) {
     const pageParam = searchParams.get('page');
 
     if (!q) {
-      return NextResponse.json({ data: { documents: [], comments: [] }, error: null });
+      return NextResponse.json({ data: { documents: [], comments: [], total: 0 }, error: null });
     }
 
     const page = pageParam ? parseInt(pageParam, 10) : 1;
 
-    const result = await searchService({
+    const result = await advancedSearchService({
       userId: session.user.id,
       userRole: session.user.role || 'USER',
       q,
       page,
+      limit: 20,
     });
 
     return NextResponse.json({ data: result.data, error: null });

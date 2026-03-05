@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Building2, FileText } from 'lucide-react';
+import { Users, Building2, FileText, Activity } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRequirements } from '@/hooks/useRequirement';
 import { UsersTab } from '@/components/features/admin/UsersTab';
 import { DepartmentsTab } from '@/components/features/admin/DepartmentsTab';
 import { RequirementsTab } from '@/components/features/admin/RequirementsTab';
+import { AuditLogsTab } from '@/components/features/admin/AuditLogsTab';
+import { AdminDashboardOverview } from '@/components/features/admin/AdminDashboardOverview';
 
-type TabType = 'users' | 'departments' | 'requirements';
+type TabType = 'users' | 'departments' | 'requirements' | 'audit';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -22,6 +24,7 @@ export default function AdminPage() {
     { id: 'users' as TabType, label: 'Users', icon: Users },
     { id: 'departments' as TabType, label: 'Departments', icon: Building2 },
     { id: 'requirements' as TabType, label: 'Requirements', icon: FileText },
+    { id: 'audit' as TabType, label: 'Audit Logs', icon: Activity },
   ];
 
   return (
@@ -29,8 +32,11 @@ export default function AdminPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold mb-2">Administration</h1>
-        <p className="text-muted-foreground">Manage users, departments, and requirements</p>
+        <p className="text-muted-foreground">Manage users, departments, requirements, and monitor system activity</p>
       </div>
+
+      {/* Dashboard Overview */}
+      <AdminDashboardOverview />
 
       {/* Tabs */}
       <div className="border-b border-border mb-6">
@@ -71,6 +77,7 @@ export default function AdminPage() {
           mutate={mutateRequirements}
         />
       )}
+      {activeTab === 'audit' && <AuditLogsTab />}
     </div>
   );
 }

@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, UserPlus } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge, Button, Modal, Input } from '@/components/ui';
+import { Badge, Button, Modal, Input, Select } from '@/components/ui';
 import { Department } from '@/hooks/useDepartments';
+import { useUsers } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createDepartmentSchema } from '@/lib/constants/schemas';
 import { z } from 'zod';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 type CreateDepartmentForm = z.infer<typeof createDepartmentSchema>;
 
@@ -20,6 +22,11 @@ interface DepartmentsTabProps {
 export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
+  const [showAddMember, setShowAddMember] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+
+  const { users } = useUsers();
 
   const {
     register,
@@ -70,6 +77,50 @@ export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
     }
   };
 
+  const handleAddMember = async (deptId: string) => {
+    if (!selectedUser) {
+      toast.error('Please select a user');
+      return;
+    }
+
+    setIsAddingMember(true);
+    try {
+      const res = await fetch(`/api/departments/${deptId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUser }),
+      });
+
+      if (!res.ok) throw new Error('Failed to add member');
+
+      toast.success('Member added successfully');
+      setShowAddMember(null);
+      setSelectedUser('');
+      mutate();
+    } catch (err) {
+      toast.error('Failed to add member');
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (deptId: string, userId: string) => {
+    if (!confirm('Remove this member from the department?')) return;
+
+    try {
+      const res = await fetch(`/api/departments/${deptId}/members/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to remove member');
+
+      toast.success('Member removed');
+      mutate();
+    } catch {
+      toast.error('Failed to remove member');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
@@ -98,33 +149,56 @@ export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
                   </button>
                   <div>
                     <h3 className="font-medium">{dept.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {dept.members?.length || 0} members
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Users className="w-3 h-3 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {dept.members?.length || 0} members
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(dept.id)}
-                  className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
-                  title="Delete department"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowAddMember(dept.id);
+                      setSelectedUser('');
+                    }}
+                    variant="outline"
+                    size="sm"
+                    icon={UserPlus}
+                  >
+                    Add Member
+                  </Button>
+                  <button
+                    onClick={() => handleDelete(dept.id)}
+                    className="p-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+                    title="Delete department"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {isExpanded && dept.members && dept.members.length > 0 && (
                 <div className="border-t border-border p-4 bg-muted/30">
                   <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <UserPlus className="w-4 h-4" />
-                    Members
+                    <Users className="w-4 h-4" />
+                    Members ({dept.members.length})
                   </h4>
                   <div className="space-y-2">
                     {dept.members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between py-2">
-                        <div>
+                      <div key={member.id} className="flex items-center justify-between py-2 px-3 bg-background rounded-lg">
+                        <div className="flex-1">
                           <p className="text-sm font-medium">{member.name}</p>
                           <p className="text-xs text-muted-foreground">{member.email}</p>
                         </div>
+                        <button
+                          onClick={() => handleRemoveMember(dept.id, member.id)}
+                          className="p-1.5 rounded hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Remove member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -160,6 +234,57 @@ export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
             error={errors.name?.message}
           />
         </form>
+      </Modal>
+
+      {/* Add Member Modal */}
+      <Modal
+        isOpen={!!showAddMember}
+        onClose={() => {
+          setShowAddMember(null);
+          setSelectedUser('');
+        }}
+        title="Add Member to Department"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddMember(null);
+                setSelectedUser('');
+              }}
+              disabled={isAddingMember}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => showAddMember && handleAddMember(showAddMember)} disabled={isAddingMember}>
+              {isAddingMember ? <LoadingSpinner /> : 'Add'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-2">Select User</label>
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              disabled={isAddingMember}
+            >
+              <option value="">Choose a user...</option>
+              {users
+                ?.filter((user) => {
+                  const dept = departments.find((d) => d.id === showAddMember);
+                  return !dept?.members?.some((m) => m.id === user.id);
+                })
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
       </Modal>
     </div>
   );
