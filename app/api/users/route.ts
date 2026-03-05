@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { listUsersService } from '@/lib/services/userService';
+import { apiSuccess, apiForbidden, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ data: null, error: 'Forbidden' }, { status: 403 });
+    if (!session?.user?.id) {
+      return apiUnauthorized();
+    }
+    if (session.user.role !== 'ADMIN') {
+      return apiForbidden('Admin access required');
     }
 
     const { searchParams } = new URL(req.url);
@@ -15,11 +19,10 @@ export async function GET(req: Request) {
 
     const result = await listUsersService({ page, limit });
 
-    return NextResponse.json({ data: result.data, error: null });
+    return apiSuccess(result.data);
   } catch (error) {
     console.error('GET Users Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    console.error('Error details:', { errorMessage, stack: error instanceof Error ? error.stack : null });
-    return NextResponse.json({ data: null, error: errorMessage }, { status: 500 });
+    return apiError(errorMessage, 500);
   }
 }

@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createRequirementSchema } from '@/lib/validations';
 import { listRequirementsService, createRequirementService } from '@/lib/services/requirementService';
+import { apiSuccess, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
 export async function GET(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     const { searchParams } = new URL(req.url);
@@ -23,12 +24,11 @@ export async function GET(req: Request) {
       limit,
     });
 
-    return NextResponse.json({ data: result.data, error: null });
+    return apiSuccess(result.data);
   } catch (error) {
     console.error('GET Requirements Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    console.error('Error details:', { errorMessage, stack: error instanceof Error ? error.stack : null });
-    return NextResponse.json({ data: null, error: errorMessage }, { status: 500 });
+    return apiError(errorMessage, 500);
   }
 }
 
@@ -36,13 +36,13 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     const body = await req.json();
     const parsed = createRequirementSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+      return apiValidationError(parsed.error.issues as any);
     }
 
     const { clientName, dueDate, priority, departmentId } = parsed.data;
@@ -56,12 +56,12 @@ export async function POST(req: Request) {
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
+      return apiError(result.error, result.status);
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    return apiSuccess(result.data, 201);
   } catch (error) {
     console.error('CREATE Requirement Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return apiError('Internal Server Error', 500);
   }
 }

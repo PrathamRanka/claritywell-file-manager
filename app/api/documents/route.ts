@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { listDocumentsService, createDocumentService } from '@/lib/services/documentService';
 import { createDocumentSchema } from '@/lib/validations';
+import { apiSuccess, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
 export async function GET(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     const { searchParams } = new URL(req.url);
@@ -25,10 +26,10 @@ export async function GET(req: Request) {
       limit,
     });
 
-    return NextResponse.json({ data: result.data, error: null });
+    return apiSuccess(result.data);
   } catch (error) {
     console.error('GET Documents Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return apiError('Internal Server Error', 500);
   }
 }
 
@@ -36,13 +37,13 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     const body = await req.json();
     const parsed = createDocumentSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+      return apiValidationError(parsed.error.issues as any);
     }
 
     const result = await createDocumentService({
@@ -51,12 +52,12 @@ export async function POST(req: Request) {
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status || 400 });
+      return apiError(result.error, result.status || 400);
     }
 
-    return NextResponse.json({ data: result.data, error: null }, { status: 201 });
+    return apiSuccess(result.data, 201);
   } catch (error) {
     console.error('POST Document Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return apiError('Internal Server Error', 500);
   }
 }

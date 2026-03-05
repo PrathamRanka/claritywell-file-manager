@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { listAuditLogsService } from '@/lib/services/auditLogService';
+import { apiSuccess, apiForbidden, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ data: null, error: 'Forbidden' }, { status: 403 });
+    if (!session?.user?.id) {
+      return apiUnauthorized();
+    }
+    if (session.user.role !== 'ADMIN') {
+      return apiForbidden('Admin access required');
     }
 
     const { searchParams } = new URL(req.url);
@@ -18,9 +22,9 @@ export async function GET(req: Request) {
 
     const result = await listAuditLogsService({ userId, documentId, action, page, limit });
 
-    return NextResponse.json({ data: result.data, error: null });
+    return apiSuccess(result.data);
   } catch (error) {
     console.error('GET Audit Log Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return apiError('Internal Server Error', 500);
   }
 }
