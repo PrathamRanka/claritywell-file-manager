@@ -14,7 +14,9 @@ export async function GET(req: Request) {
       userRole: session.user.role || 'USER',
     });
 
-    return NextResponse.json(result.data || []);
+    // Ensure we return an array directly
+    const folders = result.data?.folders || [];
+    return NextResponse.json(folders);
   } catch (error) {
     console.error('GET Folders Error:', error);
     return NextResponse.json([], { status: 500 });

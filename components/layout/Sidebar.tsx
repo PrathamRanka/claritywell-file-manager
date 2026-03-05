@@ -26,16 +26,25 @@ type FoldersApiResponse =
 
 const fetcher = async (url: string): Promise<FolderNode[]> => {
   const res = await fetch(url);
+  
+  if (!res.ok) {
+    console.error('Folders API error:', res.status);
+    return [];
+  }
+
   const json = (await res.json()) as FoldersApiResponse;
 
+  // Handle array response (most common case after fix)
   if (Array.isArray(json)) {
     return json;
   }
 
+  // Handle object with 'folders' property
   if (json && typeof json === 'object' && 'folders' in json && Array.isArray(json.folders)) {
     return json.folders;
   }
 
+  // Handle nested data.folders structure
   if (
     json &&
     typeof json === 'object' &&
@@ -47,6 +56,7 @@ const fetcher = async (url: string): Promise<FolderNode[]> => {
     return json.data.folders;
   }
 
+  console.warn('Unexpected folders API response format:', json);
   return [];
 };
 
@@ -69,6 +79,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   // Build tree structure from flat list
   const buildTree = (folders: FolderNode[]): FolderNode[] => {
+    // Safety check: ensure folders is an array
+    if (!Array.isArray(folders)) {
+      console.warn('buildTree received non-array:', folders);
+      return [];
+    }
+
     const map = new Map<string, FolderNode>();
     const roots: FolderNode[] = [];
 
@@ -167,7 +183,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     );
   };
 
-  const tree = folders ? buildTree(folders) : [];
+  const tree = folders && Array.isArray(folders) ? buildTree(folders) : [];
 
   return (
     <>
