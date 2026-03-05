@@ -174,30 +174,48 @@ export default function AdminPage() {
 }
 
 function UsersTab({ users, showCreate, setShowCreate, mutate }: any) {
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: zodResolver(createUserSchema),
   });
 
   const onSubmit = async (data: any) => {
     try {
-      await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      toast.success('User created');
-      setShowCreate(false);
+      if (editingUserId) {
+        await fetch(`/api/users/${editingUserId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: data.name, role: data.role }),
+        });
+        toast.success('User updated');
+        setEditingUserId(null);
+      } else {
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        toast.success('User created');
+        setShowCreate(false);
+      }
       reset();
       mutate();
     } catch {
-      toast.error('Failed to create user');
+      toast.error(editingUserId ? 'Failed to update user' : 'Failed to create user');
     }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUserId(user.id);
+    setValue('name', user.name);
+    setValue('role', user.role);
   };
 
   const handleDelete = async (userId: string) => {
@@ -274,7 +292,10 @@ function UsersTab({ users, showCreate, setShowCreate, mutate }: any) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center gap-2 justify-end">
-                      <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+                      <button 
+                        onClick={() => handleEdit(user)}
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button 
@@ -370,34 +391,121 @@ function UsersTab({ users, showCreate, setShowCreate, mutate }: any) {
           </div>
         </div>
       )}
+
+      {/* Edit user slide-over */}
+      {editingUserId && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setEditingUserId(null)} />
+          <div className="relative w-full max-w-md bg-surface shadow-xl overflow-y-auto slide-in-from-right">
+            <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
+              <h3 className="font-display text-xl font-bold">Edit User</h3>
+              <button onClick={() => setEditingUserId(null)} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-2">Name</label>
+                <input
+                  {...register('name')}
+                  className="w-full px-3 py-2 rounded-lg bg-muted/50 border border-transparent focus:bg-surface focus:border-accent focus-ring"
+                />
+                {errors.name && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-destructive text-sm">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>{errors.name.message as string}</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Role</label>
+                <select
+                  {...register('role')}
+                  className="w-full px-3 py-2 rounded-lg bg-muted/50 border border-transparent focus:bg-surface focus:border-accent focus-ring"
+                >
+                  <option value="USER">User</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
+              >
+                Update User
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function DepartmentsTab({ departments, showCreate, setShowCreate, mutate, expandedDepartments, toggleDepartment }: any) {
+  const [editingDept, setEditingDept] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: zodResolver(createDepartmentSchema),
   });
 
   const onSubmit = async (data: any) => {
     try {
-      await fetch('/api/departments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      toast.success('Department created');
-      setShowCreate(false);
+      if (editingDept) {
+        await fetch(`/api/departments/${editingDept}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        toast.success('Department updated');
+        setEditingDept(null);
+      } else {
+        await fetch('/api/departments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        toast.success('Department created');
+        setShowCreate(false);
+      }
       reset();
       mutate();
     } catch {
-      toast.error('Failed to create department');
+      toast.error(editingDept ? 'Failed to update department' : 'Failed to create department');
+    }
+  };
+
+  const handleEdit = (dept: Department) => {
+    setEditingDept(dept.id);
+    setValue('name', dept.name);
+  };
+
+  const handleDelete = async (deptId: string) => {
+    if (!confirm('Are you sure you want to delete this department?')) return;
+    try {
+      await fetch(`/api/departments/${deptId}`, { method: 'DELETE' });
+      toast.success('Department deleted');
+      mutate();
+    } catch {
+      toast.error('Failed to delete department');
+    }
+  };
+
+  const handleRemoveMember = async (userId: string, deptId: string) => {
+    try {
+      await fetch(`/api/departments/${deptId}/members/${userId}`, { method: 'DELETE' });
+      toast.success('Member removed');
+      mutate();
+    } catch {
+      toast.error('Failed to remove member');
     }
   };
 
@@ -436,12 +544,29 @@ function DepartmentsTab({ departments, showCreate, setShowCreate, mutate, expand
                 <Building2 className="w-5 h-5 text-accent" />
                 <div>
                   <h3 className="font-medium">{dept.name}</h3>
-                  <p className="text-sm text-muted-foreground">{dept.members.length} members</p>
+                  <p className="text-sm text-muted-foreground">{dept.members?.length || 0} members</p>
                 </div>
               </div>
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <UserPlus className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(dept);
+                  }}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(dept.id);
+                  }}
+                  className="p-2 hover:bg-destructive/10 text-destructive rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {expandedDepartments.has(dept.id) && (
@@ -456,7 +581,10 @@ function DepartmentsTab({ departments, showCreate, setShowCreate, mutate, expand
                           <p className="font-medium text-sm">{member.name}</p>
                           <p className="text-xs text-muted-foreground">{member.email}</p>
                         </div>
-                        <button className="p-1 hover:bg-muted rounded transition-colors">
+                        <button 
+                          onClick={() => handleRemoveMember(member.id, dept.id)}
+                          className="p-1 hover:bg-muted rounded transition-colors"
+                        >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </button>
                       </div>
@@ -507,6 +635,51 @@ function DepartmentsTab({ departments, showCreate, setShowCreate, mutate, expand
                   className="flex-1 py-2.5 px-4 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
                 >
                   Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit department modal */}
+      {editingDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setEditingDept(null)} />
+          <div className="relative bg-surface rounded-xl border border-border shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="font-display text-xl font-bold">Edit Department</h3>
+            </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-2">Department Name</label>
+                <input
+                  {...register('name')}
+                  placeholder="e.g. Engineering, Sales, HR"
+                  className="w-full px-3 py-2 rounded-lg bg-muted/50 border border-transparent focus:bg-surface focus:border-accent focus-ring"
+                />
+                {errors.name && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-destructive text-sm">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>{errors.name.message as string}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingDept(null)}
+                  className="flex-1 py-2.5 px-4 rounded-lg border border-border hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 px-4 rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
+                >
+                  Update
                 </button>
               </div>
             </form>

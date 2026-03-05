@@ -4,10 +4,28 @@ import { useClipboardStore } from '@/store/clipboard';
 import { Copy, Scissors, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export function ClipboardBar() {
   const { items, action, clear } = useClipboardStore();
   const router = useRouter();
+
+  // Sync with server clipboard state on mount
+  useEffect(() => {
+    const syncClipboard = async () => {
+      try {
+        const res = await fetch('/api/clipboard');
+        if (res.ok) {
+          const { data } = await res.json();
+          // Server clipboard state can be used for persistence across sessions
+          // Currently using client-side store for performance
+        }
+      } catch (error) {
+        console.error('Failed to sync clipboard:', error);
+      }
+    };
+    syncClipboard();
+  }, []);
 
   const handlePaste = async () => {
     // This will be used in the folder page to paste items
