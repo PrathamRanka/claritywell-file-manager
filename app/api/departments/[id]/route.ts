@@ -25,14 +25,13 @@ async function POSTHandler(
     const result = await updateDepartmentService(params.id, parsed.data.name);
     return timedJson({ data: result.data, error: null });
   } catch (error: any) {
-    console.error('UPDATE Department Error:', error);
     if (error?.code === 'P2002') {
       return timedJson({ data: null, error: 'Department name already exists' }, { status: 400 });
     }
     if (error?.code === 'P2025') {
       return timedJson({ data: null, error: 'Department not found' }, { status: 404 });
     }
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to update department' }, { status: 500 });
   }
 }
 
@@ -49,7 +48,6 @@ async function DELETEHandler(
     const result = await deleteDepartmentService(params.id);
     return timedJson({ data: result.data, error: null });
   } catch (error: any) {
-    console.error('DELETE Department Error:', error);
     if (error?.code === 'P2025') {
       return timedJson({ data: null, error: 'Department not found' }, { status: 404 });
     }

@@ -58,8 +58,7 @@ async function GETHandler(req: Request, context: RouteContext) {
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('GET /api/documents/[id] failed:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to fetch document' }, { status: 500 });
   }
 }
 
@@ -99,8 +98,7 @@ async function PATCHHandler(req: Request, context: RouteContext) {
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('PATCH /api/documents/[id] failed:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to update document' }, { status: 500 });
   }
 }
 
@@ -126,8 +124,7 @@ async function DELETEHandler(req: Request, context: RouteContext) {
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('DELETE /api/documents/[id] failed:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to delete document' }, { status: 500 });
   }
 }
 

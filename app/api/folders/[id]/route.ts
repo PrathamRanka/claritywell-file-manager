@@ -23,8 +23,7 @@ async function GETHandler(req: Request, { params }: { params: { id: string } }) 
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('GET Folder Error:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to fetch folder' }, { status: 500 });
   }
 }
 
@@ -51,8 +50,7 @@ async function PATCHHandler(req: Request, { params }: { params: { id: string } }
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('PATCH Folder Error:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to update folder' }, { status: 500 });
   }
 }
 
@@ -73,8 +71,7 @@ async function DELETEHandler(req: Request, { params }: { params: { id: string } 
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('DELETE Folder Error:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to delete folder' }, { status: 500 });
   }
 }
 

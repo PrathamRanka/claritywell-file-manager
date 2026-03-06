@@ -28,8 +28,7 @@ async function PATCHHandler(
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('PATCH User Error:', error);
-    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Failed to update user' }, { status: 500 });
   }
 }
 
@@ -46,7 +45,6 @@ async function DELETEHandler(
     const result = await deleteUserService(params.id);
     return timedJson({ data: result.data, error: null });
   } catch (error: any) {
-    console.error('DELETE User Error:', error);
     if (error?.code === 'P2025') {
       return timedJson({ data: null, error: 'User not found' }, { status: 404 });
     }

@@ -31,8 +31,7 @@ async function GETHandler(req: Request) {
 
     return apiSuccess(result.data);
   } catch (error) {
-    console.error('GET Documents Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Failed to fetch documents', 500);
   }
 }
 
@@ -56,8 +55,7 @@ async function POSTHandler(req: Request) {
 
     return apiSuccess(result.data, 201);
   } catch (error) {
-    console.error('POST Document Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Failed to create document', 500);
   }
 }
 

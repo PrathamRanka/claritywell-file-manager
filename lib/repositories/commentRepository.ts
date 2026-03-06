@@ -1,8 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
 export async function listComments(documentId: string, skip: number, limit: number) {
-  // Fetch all comments for the document to build the tree structure
-  // Only paginate the top-level comments
   const topLevelComments = await prisma.comment.findMany({
     where: { documentId, parentCommentId: null },
     orderBy: { createdAt: 'desc' },
@@ -17,7 +15,6 @@ export async function listComments(documentId: string, skip: number, limit: numb
     },
   });
 
-  // Get all reply comments for the top-level comments
   const topLevelIds = topLevelComments.map(c => c.id);
   if (topLevelIds.length === 0) {
     return topLevelComments;
@@ -38,15 +35,14 @@ export async function listComments(documentId: string, skip: number, limit: numb
     },
   });
 
-  // Combine top-level and replies
   return [...topLevelComments, ...replies];
 }
 
-export async function countComments(documentId: string) {
+export function countComments(documentId: string) {
   return prisma.comment.count({ where: { documentId } });
 }
 
-export async function findComment(id: string) {
+export function findComment(id: string) {
   return prisma.comment.findUnique({
     where: { id },
     select: {
@@ -61,7 +57,7 @@ export async function findComment(id: string) {
   });
 }
 
-export async function createComment(data: {
+export function createComment(data: {
   content: string;
   authorId: string;
   documentId: string;

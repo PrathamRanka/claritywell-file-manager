@@ -32,11 +32,11 @@ export async function listFoldersService(params: { userId: string; userRole: str
       folders: folders
         .filter((f: any) => isAdmin || f.createdById === userId || f.items.length > 0)
         .map((f: any) => ({
-        id: f.id,
-        name: f.name,
-        parentId: f.parentId,
-        documentCount: f.items.length,
-      })),
+          id: f.id,
+          name: f.name,
+          parentId: f.parentId,
+          documentCount: f.items.length,
+        })),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -90,7 +90,6 @@ export async function addFolderItemService(params: {
 }) {
   const { folderId, userId, userRole, documentId } = params;
 
-  // OPTIMIZATION: Parallelize folder, document, and department lookups
   const [folder, document, userDepartmentIds] = await Promise.all([
     findFolder(folderId),
     findDocumentWithRelations(documentId),

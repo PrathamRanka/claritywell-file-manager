@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-export async function createFolder(data: {
+export function createFolder(data: {
   name: string;
   createdById: string;
   parentId?: string | null;
@@ -13,7 +13,7 @@ export async function createFolder(data: {
   });
 }
 
-export async function findFolder(id: string) {
+export function findFolder(id: string) {
   return prisma.folder.findUnique({
     where: { id },
     select: { id: true, name: true, parentId: true, visibility: true, createdById: true, createdAt: true, deletedAt: true },
@@ -42,75 +42,71 @@ export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWher
     orderBy: { createdAt: 'desc' },
   });
 
-  // Transform to match expected format
   return folders.map(folder => ({
     id: folder.id,
     name: folder.name,
     parentId: folder.parentId,
     createdById: folder.createdById,
     createdAt: folder.createdAt,
-    items: Array(folder._count.items).fill({ id: '' }), // Dummy array for length check
+    items: Array(folder._count.items).fill({ id: '' }),
   }));
 }
 
-export async function countFolders() {
-  return prisma.folder.count({
-    where: { deletedAt: null },
-  });
+export function countFolders() {
+  return prisma.folder.count({ where: { deletedAt: null } });
 }
 
-export async function updateFolder(id: string, name?: string, visibility?: string) {
-  const updateData: any = {};
-  if (name) updateData.name = name;
-  if (visibility) updateData.visibility = visibility;
+export function updateFolder(id: string, name?: string, visibility?: string) {
+  const data: any = {};
+  if (name) data.name = name;
+  if (visibility) data.visibility = visibility;
   
   return prisma.folder.update({
     where: { id },
-    data: updateData,
+    data,
     select: { id: true, name: true, visibility: true, createdAt: true },
   });
 }
 
-export async function softDeleteFolder(id: string) {
+export function softDeleteFolder(id: string) {
   return prisma.$transaction([
     prisma.folderItem.deleteMany({ where: { folderId: id } }),
     prisma.folder.update({ where: { id }, data: { deletedAt: new Date() } }),
   ]);
 }
 
-export async function createFolderItem(folderId: string, documentId: string) {
+export function createFolderItem(folderId: string, documentId: string) {
   return prisma.folderItem.create({ data: { folderId, documentId } });
 }
 
-export async function findFolderItem(folderId: string, documentId: string) {
+export function findFolderItem(folderId: string, documentId: string) {
   return prisma.folderItem.findUnique({
     where: { folderId_documentId: { folderId, documentId } },
     select: { id: true, folderId: true, documentId: true, createdAt: true },
   });
 }
 
-export async function deleteFolderItemsByDocument(documentId: string) {
+export function deleteFolderItemsByDocument(documentId: string) {
   return prisma.folderItem.deleteMany({ where: { documentId } });
 }
 
-export async function moveFolderItem(documentId: string, destinationFolderId: string) {
+export function moveFolderItem(documentId: string, destinationFolderId: string) {
   return prisma.$transaction([
     prisma.folderItem.deleteMany({ where: { documentId } }),
     prisma.folderItem.create({ data: { documentId, folderId: destinationFolderId } }),
   ]);
 }
 
-export async function listFolderItems(folderId: string, skip: number = 0, limit: number = 50) {
+export function listFolderItems(folderId: string, skip: number = 0, limit: number = 50) {
   return listFolderItemsByDocumentWhere(folderId, { deletedAt: null }, skip, limit);
 }
 
-export async function listFolderItemsByDocumentWhere(
+export function listFolderItemsByDocumentWhere(
   folderId: string,
   documentWhere: Prisma.DocumentWhereInput,
   skip: number = 0,
   limit: number = 50
 ) {
-  // OPTIMIZATION: Use more efficient field selection, avoid loading unnecessary data
   return prisma.folderItem.findMany({
     where: { folderId, document: documentWhere },
     select: {
@@ -146,7 +142,7 @@ export async function listFolderItemsByDocumentWhere(
   });
 }
 
-export async function countFolderItemsByDocumentWhere(
+export function countFolderItemsByDocumentWhere(
   folderId: string,
   documentWhere: Prisma.DocumentWhereInput
 ) {

@@ -25,9 +25,7 @@ async function GETHandler(req: Request) {
 
     return apiSuccess(result.data);
   } catch (error) {
-    console.error('GET Users Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return apiError(errorMessage, 500);
+    return apiError('Failed to fetch users', 500);
   }
 }
 
@@ -62,9 +60,7 @@ async function POSTHandler(req: Request) {
 
     return apiSuccess(result.data, 201);
   } catch (error) {
-    console.error('POST User Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return apiError(errorMessage, 500);
+    return apiError('Failed to create user', 500);
   }
 }
 

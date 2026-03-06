@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-export async function findDocumentWithRelations(id: string) {
+export function findDocumentWithRelations(id: string) {
   return prisma.document.findUnique({
     where: { id },
     select: {
@@ -25,21 +25,21 @@ export async function findDocumentWithRelations(id: string) {
   });
 }
 
-export async function findDocumentOwner(id: string) {
+export function findDocumentOwner(id: string) {
   return prisma.document.findUnique({
     where: { id },
     select: { ownerId: true },
   });
 }
 
-export async function findDocumentDeletedAt(id: string) {
+export function findDocumentDeletedAt(id: string) {
   return prisma.document.findUnique({
     where: { id },
     select: { deletedAt: true },
   });
 }
 
-export async function createDocument(data: {
+export function createDocument(data: {
   title: string;
   type: string;
   visibility: string;
@@ -74,7 +74,7 @@ export async function createDocument(data: {
   });
 }
 
-export async function updateDocument(
+export function updateDocument(
   id: string,
   data: {
     title?: string;
@@ -86,14 +86,14 @@ export async function updateDocument(
   return prisma.document.update({ where: { id }, data: data as any });
 }
 
-export async function softDeleteDocument(id: string) {
+export function softDeleteDocument(id: string) {
   return prisma.document.update({
     where: { id },
     data: { deletedAt: new Date() },
   });
 }
 
-export async function restoreDocument(id: string) {
+export function restoreDocument(id: string) {
   return prisma.document.update({
     where: { id },
     data: { deletedAt: null },
@@ -101,7 +101,7 @@ export async function restoreDocument(id: string) {
   });
 }
 
-export async function listDocuments(where: Prisma.DocumentWhereInput, skip: number, limit: number) {
+export function listDocuments(where: Prisma.DocumentWhereInput, skip: number, limit: number) {
   return prisma.document.findMany({
     where,
     skip,
@@ -120,10 +120,10 @@ export async function listDocuments(where: Prisma.DocumentWhereInput, skip: numb
   });
 }
 
-export async function countDocuments(where: Prisma.DocumentWhereInput) {
+export function countDocuments(where: Prisma.DocumentWhereInput) {
   return prisma.document.count({ where });
 }
 
-export async function countDocumentsWhere(where: Prisma.DocumentWhereInput) {
+export function countDocumentsWhere(where: Prisma.DocumentWhereInput) {
   return prisma.document.count({ where });
 }

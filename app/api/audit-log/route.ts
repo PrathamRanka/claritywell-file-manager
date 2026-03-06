@@ -27,8 +27,7 @@ async function GETHandler(req: Request) {
 
     return apiSuccess(result.data);
   } catch (error) {
-    console.error('GET Audit Log Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Failed to fetch audit logs', 500);
   }
 }
 

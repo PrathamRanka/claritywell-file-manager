@@ -29,8 +29,7 @@ async function GETHandler(req: Request) {
     const totalPages = result.data?.totalPages || 0;
     return apiSuccess({ folders, total, page, totalPages });
   } catch (error) {
-    console.error('GET Folders Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Failed to fetch folders', 500);
   }
 }
 
@@ -58,8 +57,7 @@ async function POSTHandler(req: Request) {
 
     return apiSuccess(result.data, 201);
   } catch (error) {
-    console.error('POST Folder Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Failed to create folder', 500);
   }
 }
 

@@ -1,8 +1,3 @@
-/**
- * WebSocket utilities for future real-time sync implementation
- * Currently provides structure and helpers for WebSocket connections
- */
-
 type WebSocketMessage<T> = {
   type: string;
   data: T;
@@ -11,10 +6,6 @@ type WebSocketMessage<T> = {
 
 type WebSocketEventHandler<T> = (data: T) => void;
 
-/**
- * Real-time sync manager using WebSockets (for future use)
- * This provides the foundation for real-time updates when ready to implement
- */
 export class RealtimeSyncManager {
   private wsUrl: string;
   private ws: WebSocket | null = null;
@@ -28,16 +19,12 @@ export class RealtimeSyncManager {
     this.wsUrl = wsUrl;
   }
 
-  /**
-   * Connect to WebSocket server
-   */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.wsUrl);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected');
           this.reconnectAttempts = 0;
           resolve();
         };
@@ -47,12 +34,10 @@ export class RealtimeSyncManager {
         };
 
         this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
           reject(error);
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket disconnected');
           if (this.shouldReconnect) {
             this.attemptReconnect();
           }
@@ -63,9 +48,6 @@ export class RealtimeSyncManager {
     });
   }
 
-  /**
-   * Disconnect WebSocket
-   */
   disconnect(): void {
     this.shouldReconnect = false;
     if (this.ws) {
@@ -74,16 +56,12 @@ export class RealtimeSyncManager {
     }
   }
 
-  /**
-   * Subscribe to a message type
-   */
   on<T>(type: string, handler: WebSocketEventHandler<T>): () => void {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set());
     }
     this.handlers.get(type)!.add(handler);
 
-    // Return unsubscribe function
     return () => {
       const handlers = this.handlers.get(type);
       if (handlers) {
@@ -92,9 +70,6 @@ export class RealtimeSyncManager {
     };
   }
 
-  /**
-   * Send a message
-   */
   send<T>(type: string, data: T): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const message: WebSocketMessage<T> = {
@@ -106,9 +81,6 @@ export class RealtimeSyncManager {
     }
   }
 
-  /**
-   * Handle incoming messages
-   */
   private handleMessage(rawData: string): void {
     try {
       const message: WebSocketMessage<any> = JSON.parse(rawData);
@@ -118,56 +90,43 @@ export class RealtimeSyncManager {
         handlers.forEach((handler) => {
           try {
             handler(message.data);
-          } catch (error) {
-            console.error('Error in WebSocket handler:', error);
+          } catch (_error) {
+            // Handler error, skip
           }
         });
       }
-    } catch (error) {
-      console.error('Failed to parse WebSocket message:', error);
+    } catch (_error) {
+      // Invalid message format, skip
     }
   }
 
-  /**
-   * Attempt to reconnect
-   */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached');
       return;
     }
 
     this.reconnectAttempts += 1;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    console.log(`Reconnecting WebSocket in ${delay}ms (attempt ${this.reconnectAttempts})`);
-
     setTimeout(() => {
-      this.connect().catch((err) => {
-        console.error('Reconnection failed:', err);
+      this.connect().catch(() => {
         this.attemptReconnect();
       });
     }, delay);
   }
 
-  /**
-   * Check if connected
-   */
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
   }
 }
 
-/**
- * Singleton instance for global real-time sync (optional use)
- */
 let realtimeSyncInstance: RealtimeSyncManager | null = null;
 
 export function initializeGlobalRealtimeSync(wsUrl: string): RealtimeSyncManager {
   if (!realtimeSyncInstance) {
     realtimeSyncInstance = new RealtimeSyncManager(wsUrl);
-    realtimeSyncInstance.connect().catch((err) => {
-      console.error('Failed to initialize WebSocket:', err);
+    realtimeSyncInstance.connect().catch(() => {
+      // Connection failed, will retry
     });
   }
   return realtimeSyncInstance;

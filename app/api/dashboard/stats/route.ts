@@ -23,7 +23,6 @@ async function GETHandler(req: Request) {
       totalRequirements: stats?.requirementCount || 0,
     });
   } catch (error) {
-    console.error('GET Dashboard Stats Error:', error);
     return timedJson({ 
       totalUsers: 0,
       totalDocuments: 0,

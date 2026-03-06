@@ -28,14 +28,14 @@ export function useDocument(documentId: string) {
     fetcher
   );
 
-  // Extract document from API response structure
   let document: Document | undefined = undefined;
+  
   if (data?.data?.document) {
     document = {
       ...data.data.document,
       content: data.data.document.contentHtml || '',
       signedUrl: data.data.signedUrl || null,
-      canEdit: true, // TODO: Get from permissions
+      canEdit: true,
     };
   } else if (data?.document) {
     document = {

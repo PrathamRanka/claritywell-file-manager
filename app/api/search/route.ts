@@ -1,7 +1,6 @@
-import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
-import { NextResponse } from 'next/server';
+import { withRouteMetrics } from '@/lib/utils/route-metrics';
 import { auth } from '@/auth';
-import { advancedSearchService } from '@/lib/services/searchServiceAdvanced';
+import { searchService } from '@/lib/services/searchServiceAdvanced';
 import { apiSuccess, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +15,7 @@ async function GETHandler(req: Request) {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q');
     const pageParam = searchParams.get('page');
+    const advanced = searchParams.get('advanced') === 'true';
 
     if (!q) {
       return apiSuccess({ documents: [], comments: [], total: 0 });
@@ -23,18 +23,18 @@ async function GETHandler(req: Request) {
 
     const page = pageParam ? parseInt(pageParam, 10) : 1;
 
-    const result = await advancedSearchService({
+    const result = await searchService({
       userId: session.user.id,
       userRole: session.user.role || 'USER',
       q,
       page,
       limit: 20,
+      useAdvanced: advanced,
     });
 
     return apiSuccess(result.data);
   } catch (error) {
-    console.error('GET Search Error:', error);
-    return apiError('Internal Server Error', 500);
+    return apiError('Search failed', 500);
   }
 }
 

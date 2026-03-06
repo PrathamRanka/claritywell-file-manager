@@ -24,9 +24,7 @@ async function GETHandler(req: Request) {
     const result = await listDepartmentsService({ page, limit });
     return apiSuccess(result.data);
   } catch (error) {
-    console.error('GET Departments Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return apiError(errorMessage, 500);
+    return apiError('Failed to fetch departments', 500);
   }
 }
 
@@ -49,12 +47,10 @@ async function POSTHandler(req: Request) {
     const result = await createDepartmentService(parsed.data.name);
     return apiSuccess(result.data, 201);
   } catch (error: any) {
-    console.error('CREATE Department Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
     if (error?.code === 'P2002') {
       return apiError('Department name already exists', 400, 'DUPLICATE_NAME');
     }
-    return apiError(errorMessage, 500);
+    return apiError('Failed to create department', 500);
   }
 }
 

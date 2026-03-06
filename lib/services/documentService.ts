@@ -13,6 +13,7 @@ import { listComments } from '@/lib/repositories/commentRepository';
 import { createAuditLog } from '@/lib/repositories/auditLogRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { getSignedDownloadUrl } from '@/lib/storage/s3Service';
+import { getPagination, getPaginationMeta } from '@/lib/utils/pagination';
 import {
   canViewDocument,
   canEditDocument,
@@ -20,6 +21,11 @@ import {
   getVisibleDocumentsWhereClause,
 } from '@/lib/permissions';
 import { Prisma } from '@prisma/client';
+
+function extractExcerpt(html: string | null): string | null {
+  if (!html) return null;
+  return html.replace(/<[^>]+>/g, '').substring(0, 250);
+}
 
 export function mapSafeDocument(doc: any) {
   return {
@@ -50,14 +56,6 @@ export async function createDocumentService(params: {
   requirementId?: string | null;
   folderId?: string | null;
 }) {
-  // Generate excerpt from already-sanitized client content
-  let contentExcerpt: string | null = null;
-  if (params.contentHtml) {
-    contentExcerpt = params.contentHtml
-      .replace(/<[^>]+>/g, '')
-      .substring(0, 250);
-  }
-
   const newDocument = await createDocument({
     title: params.title,
     type: params.type,
@@ -65,7 +63,7 @@ export async function createDocumentService(params: {
     storagePath: params.storagePath,
     mimeType: params.mimeType,
     contentHtml: params.contentHtml || null,
-    contentExcerpt,
+    contentExcerpt: extractExcerpt(params.contentHtml || null),
     ownerId: params.userId,
     requirementId: params.requirementId,
     folderId: params.folderId,
@@ -83,10 +81,9 @@ export async function listDocumentsService(params: {
   limit: number;
 }) {
   const { userId, userRole, folderId, q, page, limit } = params;
-  const skip = (page - 1) * limit;
+  const { skip } = getPagination(page, limit);
 
   const userDepartmentIds = await getUserDepartmentIds(userId);
-
   const where: Prisma.DocumentWhereInput = getVisibleDocumentsWhereClause(
     userId,
     userRole,
@@ -94,13 +91,12 @@ export async function listDocumentsService(params: {
   );
 
   if (q) {
-    const searchClause: Prisma.DocumentWhereInput = {
+    where.AND = [{
       OR: [
         { title: { contains: q, mode: 'insensitive' } },
         { contentExcerpt: { contains: q, mode: 'insensitive' } },
       ],
-    };
-    where.AND = [searchClause];
+    }];
   }
 
   if (folderId) {
@@ -118,7 +114,7 @@ export async function listDocumentsService(params: {
     owner: undefined,
   }));
 
-  return { data: { documents, total, page, totalPages: Math.ceil(total / limit) } };
+  return { data: { documents, ...getPaginationMeta(total, page, limit) } };
 }
 
 export async function getDocumentService(params: {
@@ -129,7 +125,7 @@ export async function getDocumentService(params: {
   limit: number;
 }) {
   const { documentId, userId, userRole, page, limit } = params;
-  const skip = (page - 1) * limit;
+  const { skip } = getPagination(page, limit);
 
   const document = await findDocumentWithRelations(documentId);
   if (!document || document.deletedAt) return { error: 'Not Found', status: 404 };
@@ -169,32 +165,22 @@ export async function updateDocumentService(params: {
     return { error: 'Forbidden', status: 403 };
   }
 
-  let updatedContentHtml: string | null | undefined = undefined;
-  let contentExcerpt: string | null | undefined = undefined;
-
+  const updateData: any = {};
+  if (title) updateData.title = title;
+  if (visibility) updateData.visibility = visibility;
+  
   if (contentHtml !== undefined) {
-    updatedContentHtml = contentHtml;
-    // Generate excerpt from already-sanitized client content
-    if (contentHtml) {
-      contentExcerpt = contentHtml
-        .replace(/<[^>]+>/g, '')
-        .substring(0, 250);
-    } else {
-      contentExcerpt = null;
-    }
+    updateData.contentHtml = contentHtml;
+    updateData.contentExcerpt = extractExcerpt(contentHtml);
   }
 
-  const updatedDocument = await updateDocument(documentId, {
-    ...(title && { title }),
-    ...(visibility && { visibility }),
-    ...(contentHtml !== undefined && { contentHtml: updatedContentHtml, contentExcerpt }),
-  });
+  const updatedDocument = await updateDocument(documentId, updateData);
 
   await createAuditLog({
     action: 'EDIT',
     userId,
     documentId,
-    metadata: { updatedFields: [title, visibility, contentHtml !== undefined ? 'contentHtml' : undefined].filter(Boolean) },
+    metadata: { updatedFields: Object.keys(updateData) },
   });
 
   return { data: { document: mapSafeDocument(updatedDocument) } };
