@@ -2,17 +2,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { generate2FASecret, generateBackupCodes, formatBackupCodes } from '@/lib/services/twoFactorAuthService';
 
-/**
- * GET /api/auth/2fa/setup
- * Generate 2FA setup information for the authenticated user
- * 
- * Note: This requires updating the User schema to include:
- * - twoFactorSecret: String? (encrypted)
- * - twoFactorEnabled: Boolean @default(false)
- * - twoFactorBackupCodes: String[] (encrypted JSON)
- * 
- * Then run: npx prisma migrate dev --name add_twofactor_auth
- */
 export async function GET(req: Request) {
   try {
     const session = await auth();

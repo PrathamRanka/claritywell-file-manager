@@ -12,9 +12,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return empty clipboard state
-    // In a real implementation, this could retrieve saved clipboard state from database
-    return NextResponse.json({
+   return NextResponse.json({
       data: {
         documentIds: [],
         action: null, // 'copy' | 'cut' | null
