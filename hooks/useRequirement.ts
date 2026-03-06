@@ -19,13 +19,23 @@ export interface Requirement {
 }
 
 export function useRequirement(requirementId: string) {
-  const { data, error, mutate, isLoading } = useSWR<Requirement>(
+  const { data, error, mutate, isLoading } = useSWR<any>(
     requirementId ? `/api/requirements/${requirementId}` : null,
     fetcher
   );
 
+  // Unwrap nested API response: { data: { requirement: {...} }, error: null }
+  let requirement: Requirement | undefined = undefined;
+  if (data?.data?.requirement) {
+    requirement = data.data.requirement;
+  } else if (data?.requirement) {
+    requirement = data.requirement;
+  } else if (data?.id) {
+    requirement = data;
+  }
+
   return {
-    requirement: data,
+    requirement,
     isLoading,
     isError: error,
     mutate,
