@@ -2,7 +2,7 @@ import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkLoginRateLimit } from '@/lib/rateLimit';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const signupSchema = z.object({

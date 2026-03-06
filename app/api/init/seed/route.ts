@@ -1,6 +1,6 @@
 import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 
 async function POSTHandler() {

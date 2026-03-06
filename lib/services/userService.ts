@@ -1,6 +1,6 @@
 import { listUsers, countUsers, updateUser, deleteUser } from '@/lib/repositories/userRepository';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export async function createUserService(params: {
   email: string;
