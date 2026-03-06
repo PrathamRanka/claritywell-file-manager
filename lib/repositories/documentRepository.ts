@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/prisma/generated';
+import { Prisma } from '@prisma/client';
 
 export async function findDocumentWithRelations(id: string) {
   return prisma.document.findUnique({

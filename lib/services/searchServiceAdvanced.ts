@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getVisibleDocumentsWhereClause } from '@/lib/permissions';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
-import { Prisma } from '@/prisma/generated';
+import { Prisma } from '@prisma/client';
 
 /**
  * Enhanced search using PostgreSQL full-text search

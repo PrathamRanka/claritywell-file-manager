@@ -1,4 +1,4 @@
-import { Prisma, Role } from '../prisma/generated';
+import { Prisma, Role } from '@prisma/client';
 
 export type DocumentWithRelations = Prisma.DocumentGetPayload<{
   include: {
