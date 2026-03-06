@@ -55,3 +55,19 @@ Thumbs.db
 SYSTEM_IMPLEMENTATION.md
 INTERVIEW_PREP_SCRIPT.md
 things.md
+secrets.md
+CONCEPTS.md
+
+# Credentials & Secrets (DO NOT COMMIT)
+.env*.production
+secrets.local.json
+credentials.json
+private-key.pem
+
+# Local Development
+.dev-server
+debug.log
+*.pid
+
+# Generated Files (keep documentation in git)
+# NOTE: secrets.md, CONCEPTS.md, README.md ARE TRACKED - DO NOT IGNORE!
