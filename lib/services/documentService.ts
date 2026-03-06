@@ -11,7 +11,6 @@ import {
 } from '@/lib/repositories/documentRepository';
 import { listComments } from '@/lib/repositories/commentRepository';
 import { createAuditLog } from '@/lib/repositories/auditLogRepository';
-import { sanitizeHtml } from '@/lib/helpers/htmlSanitizer';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { getSignedDownloadUrl } from '@/lib/storage/s3Service';
 import {
@@ -51,7 +50,13 @@ export async function createDocumentService(params: {
   requirementId?: string | null;
   folderId?: string | null;
 }) {
-  const { safeContentHtml, contentExcerpt } = sanitizeHtml(params.contentHtml);
+  // Generate excerpt from already-sanitized client content
+  let contentExcerpt: string | null = null;
+  if (params.contentHtml) {
+    contentExcerpt = params.contentHtml
+      .replace(/<[^>]+>/g, '')
+      .substring(0, 250);
+  }
 
   const newDocument = await createDocument({
     title: params.title,
@@ -59,7 +64,7 @@ export async function createDocumentService(params: {
     visibility: params.visibility,
     storagePath: params.storagePath,
     mimeType: params.mimeType,
-    contentHtml: safeContentHtml,
+    contentHtml: params.contentHtml || null,
     contentExcerpt,
     ownerId: params.userId,
     requirementId: params.requirementId,
@@ -168,9 +173,15 @@ export async function updateDocumentService(params: {
   let contentExcerpt: string | null | undefined = undefined;
 
   if (contentHtml !== undefined) {
-    const sanitized = sanitizeHtml(contentHtml);
-    updatedContentHtml = sanitized.safeContentHtml;
-    contentExcerpt = sanitized.contentExcerpt;
+    updatedContentHtml = contentHtml;
+    // Generate excerpt from already-sanitized client content
+    if (contentHtml) {
+      contentExcerpt = contentHtml
+        .replace(/<[^>]+>/g, '')
+        .substring(0, 250);
+    } else {
+      contentExcerpt = null;
+    }
   }
 
   const updatedDocument = await updateDocument(documentId, {

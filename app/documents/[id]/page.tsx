@@ -9,6 +9,7 @@ import { RichTextEditor } from '@/components/features/documents/RichTextEditor';
 import { DocumentHeader } from '@/components/features/documents/DocumentHeader';
 import { CommentsSection } from '@/components/features/documents/CommentsSection';
 import { ShareModal } from '@/components/features/documents/ShareModal';
+import { sanitizeHtmlClient } from '@/lib/helpers/htmlSanitizerClient';
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
   const documentId = params.id;
@@ -24,10 +25,11 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     // Debounced save
     const timeout = setTimeout(async () => {
       try {
+        const { safeContentHtml } = sanitizeHtmlClient(content);
         await fetch(`/api/documents/${documentId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contentHtml: content }),
+          body: JSON.stringify({ contentHtml: safeContentHtml }),
         });
         setSaveStatus('saved');
       } catch {
