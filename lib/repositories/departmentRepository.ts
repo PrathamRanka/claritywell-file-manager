@@ -10,7 +10,10 @@ export async function listDepartments(skip: number, limit: number) {
       name: true, 
       createdAt: true,
       members: {
-        include: {
+        select: {
+          userId: true,
+          departmentId: true,
+          joinedAt: true,
           user: { select: { id: true, name: true, email: true, role: true } }
         }
       }

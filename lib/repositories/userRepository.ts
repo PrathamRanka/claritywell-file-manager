@@ -12,7 +12,7 @@ export async function listUsers(skip: number, limit: number) {
       role: true,
       createdAt: true,
       departmentMemberships: {
-        include: {
+        select: {
           department: { select: { name: true } },
         },
       },

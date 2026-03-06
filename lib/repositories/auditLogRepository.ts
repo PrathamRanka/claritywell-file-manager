@@ -19,7 +19,12 @@ export async function listAuditLogs(where: any, skip: number, limit: number) {
     take: limit,
     skip,
     orderBy: { createdAt: 'desc' },
-    include: {
+    select: {
+      id: true,
+      action: true,
+      metadata: true,
+      createdAt: true,
+      documentId: true,
       user: { select: { id: true, name: true, email: true } },
     },
   });

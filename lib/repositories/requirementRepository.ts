@@ -3,9 +3,17 @@ import { prisma } from '@/lib/prisma';
 export async function findRequirement(id: string) {
   return prisma.requirement.findUnique({
     where: { id },
-    include: {
-      department: true,
-      createdBy: { select: { name: true } },
+    select: {
+      id: true,
+      clientName: true,
+      dueDate: true,
+      priority: true,
+      status: true,
+      createdAt: true,
+      departmentId: true,
+      createdById: true,
+      department: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
       documents: {
         where: { deletedAt: null },
         select: { id: true, title: true, type: true, visibility: true },
@@ -56,5 +64,5 @@ export async function deleteRequirement(id: string) {
 }
 
 export async function findDepartment(id: string) {
-  return prisma.department.findUnique({ where: { id } });
+  return prisma.department.findUnique({ where: { id }, select: { id: true, name: true } });
 }

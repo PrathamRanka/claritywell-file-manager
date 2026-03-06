@@ -4,9 +4,22 @@ import { Prisma } from '@prisma/client';
 export async function findDocumentWithRelations(id: string) {
   return prisma.document.findUnique({
     where: { id },
-    include: { 
-      acl: true, 
-      requirement: true,
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      visibility: true,
+      contentHtml: true,
+      contentExcerpt: true,
+      ownerId: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      mimeType: true,
+      storagePath: true,
+      thumbnailPath: true,
+      requirement: { select: { id: true, clientName: true, departmentId: true } },
+      acl: { select: { id: true, userId: true, canView: true, canEdit: true, canComment: true } },
       owner: { select: { id: true, name: true, email: true } },
     },
   });

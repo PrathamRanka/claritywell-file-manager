@@ -1,9 +1,23 @@
 import { Prisma, Role } from '@prisma/client';
 
 export type DocumentWithRelations = Prisma.DocumentGetPayload<{
-  include: {
-    requirement: true;
-    acl: true;
+  select: {
+    id: true,
+    title: true,
+    type: true,
+    visibility: true,
+    contentHtml: true,
+    contentExcerpt: true,
+    ownerId: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    mimeType: true,
+    storagePath: true,
+    thumbnailPath: true,
+    requirement: { select: { id: true, clientName: true, departmentId: true } },
+    acl: { select: { id: true, userId: true, canView: true, canEdit: true, canComment: true } },
+    owner: { select: { id: true, name: true, email: true } },
   };
 }>;
 
