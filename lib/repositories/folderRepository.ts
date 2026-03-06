@@ -14,12 +14,13 @@ export async function createFolder(data: {
 }
 
 export async function findFolder(id: string) {
-  return prisma.folder.findUnique({ where: { id } });
+  return prisma.folder.findUnique({
+    where: { id },
+    select: { id: true, name: true, parentId: true, visibility: true, createdById: true, createdAt: true, deletedAt: true },
+  });
 }
 
 export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWhereInput) {
-  // OPTIMIZATION: Use aggregation query instead of fetching all items
-  // This prevents N+1 queries by counting in SQL rather than fetching all items
   const folders = await prisma.folder.findMany({
     where: { deletedAt: null },
     select: {
@@ -76,6 +77,7 @@ export async function createFolderItem(folderId: string, documentId: string) {
 export async function findFolderItem(folderId: string, documentId: string) {
   return prisma.folderItem.findUnique({
     where: { folderId_documentId: { folderId, documentId } },
+    select: { id: true, folderId: true, documentId: true, createdAt: true },
   });
 }
 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useRequirements } from '@/hooks/useRequirement';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { UsersTab } from '@/components/features/admin/UsersTab';
 import { DepartmentsTab } from '@/components/features/admin/DepartmentsTab';
 import { RequirementsTab } from '@/components/features/admin/RequirementsTab';
@@ -23,9 +24,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('users');
   const isAdmin = status === 'authenticated' && session?.user?.role === 'ADMIN';
 
-  const { users, mutate: mutateUsers, isError: usersError } = useUsers(isAdmin);
-  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments(isAdmin);
-  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements(isAdmin);
+  const { users, mutate: mutateUsers, isError: usersError } = useUsers(isAdmin && activeTab === 'users');
+  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments(isAdmin && (activeTab === 'departments' || activeTab === 'requirements'));
+  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements(isAdmin && activeTab === 'requirements');
+  const { stats } = useDashboardStats();
 
   // Check authentication and authorization
   if (status === 'loading') {
@@ -88,9 +90,9 @@ export default function AdminPage() {
 
       {/* Dashboard Overview */}
       <AdminDashboardOverview
-        totalUsers={users.length}
-        totalDepartments={departments.length}
-        totalRequirements={requirements.length}
+        totalUsers={stats?.totalUsers ?? 0}
+        totalDepartments={stats?.totalDepartments ?? 0}
+        totalRequirements={stats?.totalRequirements ?? 0}
       />
 
       {/* Tabs */}

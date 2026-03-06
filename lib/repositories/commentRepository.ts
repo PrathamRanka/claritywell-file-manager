@@ -47,7 +47,18 @@ export async function countComments(documentId: string) {
 }
 
 export async function findComment(id: string) {
-  return prisma.comment.findUnique({ where: { id } });
+  return prisma.comment.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      content: true,
+      documentId: true,
+      parentCommentId: true,
+      authorId: true,
+      createdAt: true,
+      author: { select: { id: true, name: true } },
+    },
+  });
 }
 
 export async function createComment(data: {
