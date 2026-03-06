@@ -8,10 +8,11 @@ import { Badge, Button, Modal, Input, Select } from '@/components/ui';
 import { User } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/utils/zodResolver';
-import { createUserSchema } from '@/lib/constants/schemas';
+import { createUserSchema, updateUserSchema } from '@/lib/validations';
 import { z } from 'zod';
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
+type UpdateUserForm = z.infer<typeof updateUserSchema>;
 
 interface UsersTabProps {
   users: User[];
@@ -22,47 +23,65 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm<CreateUserForm>({
+  const createForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
   });
 
-  const onSubmit = async (data: CreateUserForm) => {
+  const editForm = useForm<UpdateUserForm>({
+    resolver: zodResolver(updateUserSchema),
+  });
+
+  const onSubmitCreate = async (data: CreateUserForm) => {
     try {
-      if (editingUserId) {
-        await fetch(`/api/users/${editingUserId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: data.name, role: data.role }),
-        });
-        toast.success('User updated');
-        setEditingUserId(null);
-      } else {
-        await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        toast.success('User created');
-        setShowCreate(false);
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to create user');
       }
-      reset();
+      
+      toast.success('User created');
+      setShowCreate(false);
+      createForm.reset();
       mutate();
-    } catch {
-      toast.error(editingUserId ? 'Failed to update user' : 'Failed to create user');
+    } catch (error) {
+      console.error('User creation error:', error);
+      toast.error('Failed to create user');
+    }
+  };
+
+  const onSubmitEdit = async (data: UpdateUserForm) => {
+    if (!editingUserId) return;
+    
+    try {
+      const res = await fetch(`/api/users/${editingUserId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: data.name, role: data.role }),
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to update user');
+      }
+      
+      toast.success('User updated');
+      setEditingUserId(null);
+      setShowCreate(false);
+      editForm.reset();
+      mutate();
+    } catch (error) {
+      console.error('User update error:', error);
+      toast.error('Failed to update user');
     }
   };
 
   const handleEdit = (user: User) => {
     setEditingUserId(user.id);
-    setValue('name', user.name);
-    setValue('email', user.email);
-    setValue('role', user.role as 'USER' | 'ADMIN');
+    editForm.setValue('name', user.name);
+    editForm.setValue('role', user.role as 'USER' | 'ADMIN');
     setShowCreate(true);
   };
 
@@ -76,6 +95,13 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
     } catch {
       toast.error('Failed to delete user');
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowCreate(false);
+    setEditingUserId(null);
+    createForm.reset();
+    editForm.reset();
   };
 
   return (
@@ -157,22 +183,14 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
       {/* Create/Edit Modal */}
       <Modal
         isOpen={showCreate}
-        onClose={() => {
-          setShowCreate(false);
-          setEditingUserId(null);
-          reset();
-        }}
+        onClose={handleCloseModal}
         title={editingUserId ? 'Edit User' : 'Create User'}
         footer={
           <>
             <Button 
               variant="secondary" 
               type="button"
-              onClick={() => {
-                setShowCreate(false);
-                setEditingUserId(null);
-                reset();
-              }}
+              onClick={handleCloseModal}
             >
               Cancel
             </Button>
@@ -185,40 +203,65 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
           </>
         }
       >
-        <form id="user-form" className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Input
-            {...register('name')}
-            label="Name"
-            placeholder="John Doe"
-            error={errors.name?.message}
-          />
-          <Input
-            {...register('email')}
-            label="Email"
-            type="email"
-            placeholder="john@example.com"
-            error={errors.email?.message}
-            disabled={!!editingUserId}
-          />
-          {!editingUserId && (
+        {editingUserId ? (
+          <form 
+            id="user-form" 
+            className="space-y-4" 
+            onSubmit={editForm.handleSubmit(onSubmitEdit)}
+          >
             <Input
-              {...register('password')}
+              {...editForm.register('name')}
+              label="Name"
+              placeholder="John Doe"
+              error={editForm.formState.errors.name?.message}
+            />
+            <Select
+              {...editForm.register('role')}
+              label="Role"
+              options={[
+                { value: 'USER', label: 'User' },
+                { value: 'ADMIN', label: 'Admin' },
+              ]}
+              error={editForm.formState.errors.role?.message}
+            />
+          </form>
+        ) : (
+          <form 
+            id="user-form" 
+            className="space-y-4" 
+            onSubmit={createForm.handleSubmit(onSubmitCreate)}
+          >
+            <Input
+              {...createForm.register('name')}
+              label="Name"
+              placeholder="John Doe"
+              error={createForm.formState.errors.name?.message}
+            />
+            <Input
+              {...createForm.register('email')}
+              label="Email"
+              type="email"
+              placeholder="john@example.com"
+              error={createForm.formState.errors.email?.message}
+            />
+            <Input
+              {...createForm.register('password')}
               label="Password"
               type="password"
               placeholder="••••••••"
-              error={errors.password?.message}
+              error={createForm.formState.errors.password?.message}
             />
-          )}
-          <Select
-            {...register('role')}
-            label="Role"
-            options={[
-              { value: 'USER', label: 'User' },
-              { value: 'ADMIN', label: 'Admin' },
-            ]}
-            error={errors.role?.message}
-          />
-        </form>
+            <Select
+              {...createForm.register('role')}
+              label="Role"
+              options={[
+                { value: 'USER', label: 'User' },
+                { value: 'ADMIN', label: 'Admin' },
+              ]}
+              error={createForm.formState.errors.role?.message}
+            />
+          </form>
+        )}
       </Modal>
     </div>
   );

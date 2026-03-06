@@ -13,9 +13,8 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
-  name: z.string().min(1, 'Name is required').optional(),
-  email: z.string().email('Invalid email').optional(),
-  role: z.enum(['USER', 'ADMIN']).optional(),
+  name: z.string().min(1, 'Name is required'),
+  role: z.enum(['USER', 'ADMIN']),
 });
 
 export const createDepartmentSchema = z.object({
