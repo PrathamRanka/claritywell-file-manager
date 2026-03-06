@@ -5,6 +5,8 @@ import { uploadRequestSchema } from '@/lib/validations';
 import { rateLimit, checkUploadRateLimit } from '@/lib/rateLimit';
 import { requestUploadService } from '@/lib/services/uploadService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(req: Request) {
   try {
     const session = await auth();

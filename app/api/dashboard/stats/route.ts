@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { dashboardStatsService } from '@/lib/services/dashboardService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

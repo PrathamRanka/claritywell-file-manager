@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { listAuditLogsService } from '@/lib/services/auditLogService';
 import { apiSuccess, apiForbidden, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

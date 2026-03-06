@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { revokeAclService } from '@/lib/services/aclService';
 
+export const dynamic = 'force-dynamic';
+
 async function DELETEHandler(
   req: Request,
   { params }: { params: { id: string; userId: string } }

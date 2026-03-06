@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { createDepartmentSchema } from '@/lib/validations';
 import { updateDepartmentService, deleteDepartmentService } from '@/lib/services/departmentService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(
   req: Request,
   { params }: { params: { id: string } }

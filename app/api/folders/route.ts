@@ -6,6 +6,8 @@ import { checkFolderCreationRateLimit } from '@/lib/rateLimit';
 import { listFoldersService, createFolderService } from '@/lib/services/folderService';
 import { apiSuccess, apiUnauthorized, apiError, apiValidationError, apiRateLimited } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

@@ -9,6 +9,8 @@ import {
   deleteDocumentService,
 } from '@/lib/services/documentService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await auth();

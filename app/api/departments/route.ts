@@ -5,6 +5,8 @@ import { createDepartmentSchema } from '@/lib/validations';
 import { listDepartmentsService, createDepartmentService } from '@/lib/services/departmentService';
 import { apiSuccess, apiForbidden, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

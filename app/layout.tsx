@@ -11,6 +11,8 @@ export const metadata = {
   description: 'Secure document management with role-based access control',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: {

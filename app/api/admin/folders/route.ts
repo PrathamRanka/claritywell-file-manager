@@ -2,6 +2,8 @@ import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 function isMissingVisibilityColumnError(error: unknown) {
   if (!(error instanceof Error)) return false;
   const msg = error.message.toLowerCase();

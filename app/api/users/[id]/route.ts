@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { updateUserSchema } from '@/lib/validations';
 import { updateUserService, deleteUserService } from '@/lib/services/userService';
 
+export const dynamic = 'force-dynamic';
+
 async function PATCHHandler(
   req: Request,
   { params }: { params: { id: string } }

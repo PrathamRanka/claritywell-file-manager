@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getRequirementService, deleteRequirementService } from '@/lib/services/requirementService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }

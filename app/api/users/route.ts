@@ -5,6 +5,8 @@ import { createUserSchema } from '@/lib/validations';
 import { createUserService, listUsersService } from '@/lib/services/userService';
 import { apiSuccess, apiForbidden, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

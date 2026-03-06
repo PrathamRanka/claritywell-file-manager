@@ -2,6 +2,8 @@ import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 // Note: Clipboard is typically managed client-side in localStorage.
 // This endpoint provides a server-side clipboard state placeholder.
 // In a more advanced implementation, this could store clipboard state per user.

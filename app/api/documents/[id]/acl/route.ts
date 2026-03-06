@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { updateDocumentAclSchema } from '@/lib/validations';
 import { upsertAclService } from '@/lib/services/aclService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await auth();

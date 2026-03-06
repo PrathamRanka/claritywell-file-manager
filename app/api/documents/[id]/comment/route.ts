@@ -5,6 +5,8 @@ import { createCommentSchema } from '@/lib/validations';
 import { checkCommentRateLimit } from '@/lib/rateLimit';
 import { createCommentService, listCommentsService } from '@/lib/services/commentService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }

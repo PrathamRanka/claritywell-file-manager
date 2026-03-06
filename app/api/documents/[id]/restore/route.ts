@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { restoreDocumentService } from '@/lib/services/documentService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(
   req: Request,
   { params }: { params: { id: string } }

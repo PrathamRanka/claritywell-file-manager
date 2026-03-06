@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { updateFolderSchema } from '@/lib/validations';
 import { getFolderService, updateFolderService, deleteFolderService } from '@/lib/services/folderService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await auth();

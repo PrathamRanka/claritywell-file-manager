@@ -5,6 +5,8 @@ import { createRequirementSchema } from '@/lib/validations';
 import { listRequirementsService, createRequirementService } from '@/lib/services/requirementService';
 import { apiSuccess, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

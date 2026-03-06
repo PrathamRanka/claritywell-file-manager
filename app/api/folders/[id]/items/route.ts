@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { addFolderItemSchema } from '@/lib/validations';
 import { addFolderItemService, listFolderItemsService } from '@/lib/services/folderService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }

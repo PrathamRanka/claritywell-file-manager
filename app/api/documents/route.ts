@@ -5,6 +5,8 @@ import { listDocumentsService, createDocumentService } from '@/lib/services/docu
 import { createDocumentSchema } from '@/lib/validations';
 import { apiSuccess, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();

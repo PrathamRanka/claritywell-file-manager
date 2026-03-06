@@ -6,6 +6,8 @@ import { checkDocumentCreationRateLimit } from '@/lib/rateLimit';
 import { createDocumentService } from '@/lib/services/documentService';
 import { generateThumbnailService } from '@/lib/services/thumbnailService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(req: Request) {
   try {
     const session = await auth();

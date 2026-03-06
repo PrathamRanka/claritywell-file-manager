@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { clipboardPasteSchema } from '@/lib/validations';
 import { clipboardPasteService } from '@/lib/services/clipboardService';
 
+export const dynamic = 'force-dynamic';
+
 async function POSTHandler(req: Request) {
   try {
     const session = await auth();

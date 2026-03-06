@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { addDepartmentMemberSchema } from '@/lib/validations';
 import { listDepartmentMembersService, addDepartmentMemberService } from '@/lib/services/departmentService';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }

@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { advancedSearchService } from '@/lib/services/searchServiceAdvanced';
 import { apiSuccess, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 async function GETHandler(req: Request) {
   try {
     const session = await auth();
