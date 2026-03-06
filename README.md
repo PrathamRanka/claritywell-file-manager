@@ -1,178 +1,782 @@
-# DocVault - Document Management System
+# DocVault - Enterprise Document Management System
 
-DocVault is a modern, secure document management platform designed for organizations that require role-based access control, efficient document organization, and comprehensive audit tracking. Built with Next.js, TypeScript, and PostgreSQL, DocVault provides a scalable solution for managing documents, requirements, and collaborative workflows.
+A production-ready, secure document management system with role-based access control, department management, and comprehensive audit logging. Built with Next.js 14, TypeScript, PostgreSQL, and Supabase Storage.
 
 ## Table of Contents
 
-1. Overview
-2. Features
-3. Tech Stack
-4. Architecture
-5. Installation
-6. Configuration
-7. Database Schema
-8. API Documentation
-9. Frontend Components
-10. Authentication & Authorization
-11. Deployment
-12. Development
-13. Contributing
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Architecture & Design Decisions](#architecture--design-decisions)
+- [Feature Implementation Status](#feature-implementation-status)
+- [Tech Stack](#tech-stack)
+- [Database Schema](#database-schema)
+- [API Documentation](#api-documentation)
+- [Security Features](#security-features)
+- [Production Deployment](#production-deployment)
 
-## Overview
+---
 
-DocVault provides a centralized document management system with the following core capabilities:
+## Quick Start
 
-- Secure document storage with role-based permissions
-- Hierarchical folder organization
-- Real-time collaborative features with comments
-- Requirements tracking and management
-- Department-based access control
-- Comprehensive audit logging
-- Advanced search functionality
-- Session clipboard management
+### Prerequisites
 
-The application supports three user roles:
+- Node.js 18+ and npm/yarn
+- PostgreSQL 13+ database
+- Supabase account (for S3-compatible storage) or AWS S3
 
-- Admin: Full system access, user and department management
-- User: Access to assigned documents and department resources
-- Guest: Read-only access to shared documents
+### Local Setup
 
-## Features
+**1. Clone and Install**
 
-### Document Management
+```bash
+git clone <repository-url>
+cd Assessment
+npm install
+```
 
-- Create, update, and delete documents
-- Multiple document types: WYSIWYG, Image, PDF
-- Three visibility levels: Private, Department, Shared
-- Soft delete with restore capability
-- Auto-generated thumbnails for preview
-- Rich text editing with TipTap editor
+**2. Configure Environment Variables**
 
-### Folder Organization
+Create `.env.local` file in the project root:
 
-- Create hierarchical folder structures
-- Organize documents into folders
-- Parent-child relationships for nested folders
-- Bulk folder operations
-- Folder-based access control
+```env
+# Database Connection
+DATABASE_URL="postgresql://username:password@localhost:5432/docvault"
 
-### Permissions & Sharing
+# NextAuth.js Configuration
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 
-- Document ACL (Access Control List) management
-- Granular permissions: View, Comment, Edit
-- Share documents with specific users
-- Department-level sharing
-- Audit trail for permission changes
+# Supabase S3-Compatible Storage (or AWS S3)
+SUPABASE_S3_REGION="ap-south-1"
+SUPABASE_S3_ENDPOINT="https://<project-ref>.supabase.co/storage/v1/s3"
+SUPABASE_S3_ACCESS_KEY_ID="your-access-key-id"
+SUPABASE_S3_SECRET_ACCESS_KEY="your-secret-access-key"
+SUPABASE_S3_BUCKET_NAME="documents"
+```
 
-### Comments & Collaboration
+**3. Initialize Database**
 
-- Thread-based comments on documents
-- Reply to comments
-- Real-time comment updates
-- Rich text support in comments
-- Comment author attribution
+```bash
+# Generate Prisma Client
+npx prisma generate
 
-### Requirements Tracking
+# Run migrations
+npx prisma migrate deploy
 
-- Create and manage client requirements
-- Link requirements to documents
-- Priority levels: Low, Medium, High, Urgent
-- Status tracking: Open, In Progress, Review, Completed
-- Due date management
-- Department assignment
+# Seed database with sample data (optional)
+node seed.js
+```
 
-### Department Management
+**4. Start Development Server**
 
-- Create and manage departments
-- Add/remove members
-- View department resources
-- Department-based visibility
-- Admin-only operations
+```bash
+npm run dev
+```
 
-### User Management
+Visit http://localhost:3000
 
-- Create user accounts
-- Assign roles (Admin, User)
-- Manage department memberships
-- Edit user information
-- Delete user accounts
-- View user activity logs
+**5. Default Admin Credentials**
 
-### Administration
+After seeding, login with:
+- **Email:** `admin@docvault.com`
+- **Password:** `admin123`
 
-- Admin dashboard with statistics
-- User list with management
-- Department management
-- Requirements overview
-- Audit log access
-- System metrics
+---
 
-### Audit & Compliance
+## Environment Variables
 
-- Complete audit logging
-- Track all user actions
-- Timestamp all operations
-- Log audit details: action type, actor, resource, timestamp
-- Filter audit logs by user, document, or action
-- Audit report generation
+### Required Variables
 
-### Search & Discovery
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `NEXTAUTH_URL` | Application base URL for auth callbacks | `http://localhost:3000` |
+| `NEXTAUTH_SECRET` | Secret key for session encryption (32+ chars) | Generated with `openssl rand -base64 32` |
+| `SUPABASE_S3_REGION` | S3 region or "auto" for Supabase | `ap-south-1` or `auto` |
+| `SUPABASE_S3_ENDPOINT` | S3 endpoint URL | `https://xyz.supabase.co/storage/v1/s3` |
+| `SUPABASE_S3_ACCESS_KEY_ID` | S3 access key ID | Your access key |
+| `SUPABASE_S3_SECRET_ACCESS_KEY` | S3 secret access key | Your secret key |
+| `SUPABASE_S3_BUCKET_NAME` | S3 bucket name for document storage | `documents` |
 
-- Full-text search across documents
-- Search document titles and content
-- Search comments
-- Pagination support
-- Highlighting of search results
+### Generating NEXTAUTH_SECRET
 
-### Clipboard & Bulk Operations
+```bash
+openssl rand -base64 32
+```
 
-- Clipboard system for copy/cut/paste
-- Bulk document operations
+### Setting up Supabase Storage
+
+1. Create a Supabase project at https://supabase.com
+2. Navigate to Storage → Create new bucket → Name it "documents"
+3. Go to Settings → API → Find S3 endpoint and credentials
+4. Copy credentials to `.env.local`
+
+---
+
+---
+
+## Architecture & Design Decisions
+
+### Layered Architecture
+
+```
+┌─────────────────────────────────────────┐
+│         Next.js App Router (UI)         │
+│     React Components + Server Actions    │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│          API Routes Layer               │
+│  Authentication, Validation, Rate Limit  │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│        Service Layer (Business Logic)    │
+│   documentService, userService, etc.     │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│     Repository Layer (Data Access)       │
+│  Prisma ORM + Database Queries          │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│          PostgreSQL Database             │
+└─────────────────────────────────────────┘
+```
+
+### Key Architecture Decisions
+
+#### 1. **Monolithic Next.js Architecture**
+- **Choice:** Single Next.js application with API routes
+- **Rationale:** Simplifies deployment, reduces complexity, and leverages Next.js server-side capabilities
+- **Tradeoff:** Less scalable than microservices but faster development and easier maintenance
+- **Alternative:** Separate frontend/backend would add deployment complexity
+
+#### 2. **Layered Service Architecture**
+- **Choice:** Service Layer → Repository Layer → Database
+- **Rationale:** 
+  - Services contain business logic and permission checks
+  - Repositories handle data access (Prisma queries)
+  - Clear separation of concerns improves testability
+- **Tradeoff:** More files/abstraction but better organized code
+- **Benefit:** Easy to refactor, test, and maintain
+
+#### 3. **Server-Side Upload with Signed URLs**
+- **Choice:** Client → Request signed URL → Direct upload to S3 → Save metadata
+- **Rationale:** 
+  - Reduces server bandwidth (no data pass-through)
+  - Faster uploads (direct to storage)
+  - Server-side security (service keys never exposed)
+- **Tradeoff:** Slightly more complex flow but much more scalable
+- **Alternative:** Uploading through server would create bandwidth bottleneck
+
+#### 4. **PostgreSQL + Prisma ORM**
+- **Choice:** PostgreSQL with Prisma for database access
+- **Rationale:**
+  - PostgreSQL: Robust, supports full-text search, JSONB for metadata
+  - Prisma: Type-safe queries, automatic migrations, great DX
+- **Tradeoff:** Prisma adds abstraction layer but improves developer productivity
+- **Benefit:** Full-text search for documents using `ts_rank` and `to_tsvector`
+
+#### 5. **Client-Side State Management (Zustand)**
+- **Choice:** Zustand for global clipboard state
+- **Rationale:** Lightweight, simple API, no boilerplate like Redux
+- **Tradeoff:** Less structured than Redux but perfect for simple state needs
+- **Alternative:** Redux would be overkill for clipboard-only state
+
+#### 6. **NextAuth.js for Authentication**
+- **Choice:** NextAuth.js with Credentials Provider
+- **Rationale:**
+  - Built for Next.js, handles sessions, CSRF, cookies securely
+  - Extensible for OAuth providers
+- **Tradeoff:** Tied to Next.js ecosystem but perfect integration
+- **Alternative:** Custom JWT auth would require more security work
+
+#### 7. **Soft Deletes**
+- **Choice:** `deletedAt` timestamp instead of hard deletes
+- **Rationale:** 
+  - Enables restore functionality
+  - Maintains audit trail
+  - Prevents accidental data loss
+- **Tradeoff:** Requires filtering `deletedAt IS NULL` in queries
+- **Benefit:** Compliance and data recovery
+
+#### 8. **Permission Model: Visibility + ACL**
+- **Choice:** Document-level visibility (PRIVATE/DEPARTMENT/SHARED) + explicit ACL
+- **Rationale:**
+  - PRIVATE: Simple owner-only access
+  - DEPARTMENT: Automatic access for department members
+  - SHARED: Explicit per-user permissions (view/comment/edit)
+- **Tradeoff:** More complex logic but flexible permission model
+- **Benefit:** Covers all use cases without over-engineering
+
+#### 9. **Rate Limiting (In-Memory)**
+- **Choice:** In-memory Map for rate limiting
+- **Rationale:** Simple, fast, no external dependencies
+- **Tradeoff:** Resets on server restart, not shared across instances
+- **Production Alternative:** Redis for distributed rate limiting
+
+#### 10. **SWR for Data Fetching**
+- **Choice:** SWR (stale-while-revalidate) for client-side data fetching
+- **Rationale:**
+  - Automatic caching and revalidation
+  - Focus on user experience (show cached data immediately)
+  - Built-in error handling and retry logic
+- **Tradeoff:** More network requests but better UX
+- **Alternative:** React Query has more features but SWR is simpler
+
+---
+
+## Feature Implementation Status
+
+### FULLY IMPLEMENTED (Production Ready)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **User Authentication** | Complete | Login/logout with NextAuth, secure sessions |
+| **User Registration** | Complete | Self-signup + admin user creation |
+| **Admin User Management** | Complete | Create, update, delete users (admin-only) |
+| **Department Management** | Complete | CRUD operations, member management |
+| **Requirement Creation** | Complete | Create requirements assigned to departments |
+| **Document Upload Flow** | Complete | Signed URLs (15min expiry), direct S3 upload |
+| **Document CRUD** | Complete | Create, read, update, soft delete, restore |
+| **Document Permissions** | Complete | PRIVATE, DEPARTMENT, SHARED (ACL) |
+| **Folder Management** | Complete | Hierarchical folders, CRUD operations |
+| **Clipboard (Copy/Cut/Paste)** | Complete | Client state + server validation on paste |
+| **Comments System** | Complete | Nested comments, permission checks |
+| **Search** | Complete | PostgreSQL full-text search with ranking |
+| **Audit Logging** | Complete | All actions logged with metadata |
+| **Input Validation** | Complete | Zod schemas on every endpoint |
+| **Rate Limiting** | Complete | Per-user limits on uploads, comments, etc. |
+| **HTML Sanitization** | Complete | DOMPurify for WYSIWYG content |
+| **Signed Download URLs** | Complete | Short-lived (15min) download links |
+| **Dashboard Stats** | Complete | Admin dashboard with metrics |
+| **Pagination** | Complete | Server-side pagination on all lists |
+| **Soft Deletes** | Complete | Restore capability for documents |
+
+### PARTIAL / OMITTED FEATURES
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Real-time Sync (WebSockets)** | Partial | Service exists but not fully integrated in UI |
+| **2FA (Two-Factor Auth)** | Partial | Backend ready, frontend setup page incomplete (see [docs/2FA_IMPLEMENTATION.md](docs/2FA_IMPLEMENTATION.md)) |
+| **Email Notifications** | Omitted | Would require SMTP/email service integration |
+| **Document Versioning** | Omitted | Complex feature, deferred for MVP |
+| **Advanced ACL Inheritance** | Omitted | Folder-level permissions don't cascade to documents |
+| **Thumbnail Generation** | Partial | Service exists but requires Sharp library for images |
+| **Bulk Upload** | Omitted | Single file upload only |
+| **Export to ZIP** | Omitted | No bulk download feature |
+| **Mobile App** | Out of Scope | Web-only responsive design |
+
+---
+
+## Bonus Features Implemented
+
+### 1. PostgreSQL Full-Text Search
+- Advanced search using `ts_rank` and `to_tsvector`
+- Ranks results by relevance
+- Searches document titles, content excerpts, and comments
+- **File:** [lib/services/searchServiceAdvanced.ts](lib/services/searchServiceAdvanced.ts)
+
+### 2. Comprehensive Audit Logging
+- Every document action logged (CREATE, EDIT, DELETE, MOVE, COPY, SHARE)
+- Includes metadata (what changed, by whom, when)
+- Admin-only audit log viewer with filters
+- **File:** [lib/repositories/auditLogRepository.ts](lib/repositories/auditLogRepository.ts)
+
+### 3. Clipboard with Success/Failure Tracking
+- Global Zustand store for clipboard state
+- Paste operation validates each document individually
+- Returns `{succeeded: [], failed: [{id, reason}]}`
+- UI shows detailed per-file errors
+- **File:** [lib/services/clipboardService.ts](lib/services/clipboardService.ts)
+
+### 4. Admin Dashboard with Real-time Stats
+- Total users, documents, departments, requirements
+- Recent activity feed
+- Quick actions for user/department management
+- **File:** [lib/services/dashboardService.ts](lib/services/dashboardService.ts)
+
+### 5. Hierarchical Folder System
+- Parent-child folder relationships
+- Nested folder navigation
 - Move documents between folders
-- Copy documents to multiple locations
+- **File:** [lib/services/folderService.ts](lib/services/folderService.ts)
+
+### 6. Rate Limiting Per User
+- 20 uploads/hour
+- 50 document creations/hour
+- 100 comments/hour
+- 30 folder creations/hour
+- **File:** [lib/rateLimit.ts](lib/rateLimit.ts)
+
+### 7. Soft Delete + Restore
+- Documents marked with `deletedAt` timestamp
+- Admin can restore deleted documents
+- Maintains audit trail even for deleted items
+- **Endpoint:** `POST /api/documents/:id/restore`
+
+### 8. HTML Content Sanitization
+- Server-side sanitization with DOMPurify (isomorphic)
+- Prevents XSS attacks in WYSIWYG documents
+- Generates content excerpts for previews
+- **File:** [lib/helpers/htmlSanitizer.ts](lib/helpers/htmlSanitizer.ts)
+
+### 9. Department-Based Permissions
+- Requirements assigned to departments
+- Department members automatically see department documents
+- Admin can manage department memberships
+- **File:** [lib/permissions.ts](lib/permissions.ts)
+
+### 10. 2FA Infrastructure (Backend Ready)
+- TOTP-based 2FA with Speakeasy
+- QR code generation for authenticator apps
+- Backup codes for account recovery
+- API endpoints ready, frontend integration partial
+- **Files:** [lib/services/twoFactorAuthService.ts](lib/services/twoFactorAuthService.ts), [docs/2FA_IMPLEMENTATION.md](docs/2FA_IMPLEMENTATION.md)
+
+---
+
+---
 
 ## Tech Stack
 
 ### Frontend
-
-- Next.js 14 (App Router)
-- TypeScript
-- React 18
-- React Hook Form
-- Zod validation
-- TailwindCSS
-- SWR (data fetching)
-- Zustand (state management)
-- TipTap (rich text editor)
-- Lucide React (icons)
-- Sonner (notifications)
-- date-fns (date utilities)
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript 5.3
+- **UI Library:** React 18
+- **Styling:** TailwindCSS 3.4
+- **Forms:** React Hook Form + Zod validation
+- **State Management:** Zustand (clipboard), SWR (data fetching)
+- **Rich Text:** TipTap (WYSIWYG editor)
+- **Icons:** Lucide React
+- **Notifications:** Sonner (toast)
 
 ### Backend
+- **Runtime:** Node.js 18+
+- **API:** Next.js API Routes
+- **Authentication:** NextAuth.js 4
+- **ORM:** Prisma 7.4
+- **Database:** PostgreSQL 13+
+- **Storage:** Supabase Storage (S3-compatible) / AWS S3
+- **Validation:** Zod
+- **Security:** bcrypt, DOMPurify (isomorphic), CSRF protection
 
-- Next.js API Routes
-- NextAuth.js (authentication)
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- AWS S3 (file storage)
-- Node.js runtime
+### DevOps & Tools
+- **Package Manager:** npm
+- **Linting:** ESLint
+- **Type Checking:** TypeScript Compiler
+- **Database Migrations:** Prisma Migrate
+- **Environment Variables:** .env.local
 
-### Database
+---
 
-- PostgreSQL
-- Prisma schema management
-- Migrations support
+## Database Schema
 
-### DevOps
+### Core Models
 
-- Docker support
-- Vercel deployment ready
-- Environment-based configuration
+```prisma
+model User {
+  id                    String             @id @default(cuid())
+  email                 String             @unique
+  passwordHash          String
+  role                  Role               // ADMIN | USER
+  name                  String
+  avatarUrl             String?
+  lastLoginAt           DateTime?
+  createdAt             DateTime           @default(now())
+  
+  // Relations
+  departmentMemberships DepartmentMember[]
+  documentsCreated      Document[]
+  comments              Comment[]
+  documentAcls          DocumentACL[]
+  auditLogs             AuditLog[]
+}
 
-## Architecture
+model Department {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  createdAt    DateTime           @default(now())
+  members      DepartmentMember[]
+  requirements Requirement[]
+}
 
-### Project Structure
+model Requirement {
+  id           String            @id @default(cuid())
+  clientName   String
+  dueDate      DateTime
+  priority     Priority          // LOW | MEDIUM | HIGH | URGENT
+  status       RequirementStatus // OPEN | IN_PROGRESS | REVIEW | COMPLETED
+  departmentId String
+  createdById  String
+  createdAt    DateTime          @default(now())
+  
+  // Relations
+  department   Department
+  documents    Document[]
+}
+
+model Document {
+  id             String        @id @default(cuid())
+  title          String
+  type           DocumentType  // WYSIWYG | IMAGE | PDF
+  visibility     Visibility    // PRIVATE | DEPARTMENT | SHARED
+  ownerId        String
+  requirementId  String?
+  storagePath    String?       // S3 key
+  mimeType       String?
+  contentHtml    String?       // For WYSIWYG docs
+  contentExcerpt String?       // Search preview
+  thumbnailPath  String?
+  deletedAt      DateTime?     // Soft delete
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  // Relations
+  owner          User
+  requirement    Requirement?
+  folderItems    FolderItem[]
+  comments       Comment[]
+  acl            DocumentACL[]
+}
+
+model DocumentACL {
+  id           String   @id @default(cuid())
+  documentId   String
+  userId       String
+  grantedById  String?
+  canEdit      Boolean  @default(false)
+  canComment   Boolean  @default(false)
+  canView      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  
+  @@unique([documentId, userId])
+}
+
+model Folder {
+  id          String       @id @default(cuid())
+  name        String
+  parentId    String?      // For nested folders
+  createdById String
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  
+  // Relations
+  items       FolderItem[]
+  children    Folder[]     @relation("FolderHierarchy")
+  parent      Folder?      @relation("FolderHierarchy")
+}
+
+model Comment {
+  id              String    @id @default(cuid())
+  content         String
+  authorId        String
+  documentId      String
+  parentCommentId String?   // For nested replies
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  author          User
+  document        Document
+  replies         Comment[] @relation("CommentReplies")
+  parent          Comment?  @relation("CommentReplies")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  action     AuditAction // CREATE | EDIT | DELETE | MOVE | COPY | SHARE
+  userId     String
+  documentId String?
+  metadata   Json?       // Additional action details
+  createdAt  DateTime    @default(now())
+  
+  // Relations
+  user       User
+}
+```
+
+### Relationships Summary
+
+- **User ↔ Department:** Many-to-many via `DepartmentMember`
+- **User → Documents:** One-to-many (owner)
+- **Document ↔ Folder:** Many-to-many via `FolderItem`
+- **Document → Comments:** One-to-many
+- **Document → ACL:** One-to-many (explicit permissions)
+- **Requirement → Documents:** One-to-many
+- **Folder → Folder:** Self-referential for hierarchy
+
+---
+
+---
+
+## API Documentation
+
+### Authentication
+
+```http
+POST /api/auth/[...nextauth]
+```
+NextAuth.js handles login/logout. Use NextAuth signIn/signOut functions.
+
+```http
+POST /api/auth/signup
+Body: { email, password, name }
+Response: { user } (creates USER role only)
+```
+
+### Admin User Management
+
+```http
+POST /api/users
+Headers: Admin authentication required
+Body: { email, password, name, role: "ADMIN" | "USER" }
+Response: { user }
+```
+
+```http
+GET /api/users?page=1&limit=50
+Headers: Admin authentication required
+Response: { users, total, page, totalPages }
+```
+
+```http
+PATCH /api/users/:id
+Headers: Admin authentication required
+Body: { role?, name? }
+Response: { user }
+```
+
+```http
+DELETE /api/users/:id
+Headers: Admin authentication required
+Response: { success }
+```
+
+### Departments
+
+```http
+POST /api/departments
+Headers: Admin authentication required
+Body: { name }
+Response: { department }
+```
+
+```http
+POST /api/departments/:id/members
+Headers: Admin authentication required
+Body: { userId }
+Response: { member }
+```
+
+### Requirements
+
+```http
+POST /api/requirements
+Body: { clientName, dueDate, priority, departmentId }
+Response: { requirement }
+```
+
+```http
+GET /api/requirements?departmentId=&page=1
+Response: { requirements }
+```
+
+### Upload Flow
+
+```http
+# Step 1: Request signed URL
+POST /api/uploads/request
+Body: { fileName, contentType, size }
+Response: { uploadUrl, fileKey, expiresAt }
+
+# Step 2: Client uploads directly to uploadUrl (PUT request)
+
+# Step 3: Save document metadata
+POST /api/documents/create
+Body: { title, type, visibility, storagePath: fileKey, requirementId?, folderId? }
+Response: { document }
+```
+
+### Documents
+
+```http
+GET /api/documents?folderId=&q=&page=1&limit=20
+Response: { documents, total }
+```
+
+```http
+GET /api/documents/:id
+Response: { document, comments, signedDownloadUrl }
+```
+
+```http
+PATCH /api/documents/:id
+Body: { title?, visibility?, contentHtml? }
+Response: { document }
+```
+
+```http
+DELETE /api/documents/:id
+Response: { success } (soft delete)
+```
+
+```http
+POST /api/documents/:id/restore
+Headers: Admin authentication required
+Response: { document }
+```
+
+```http
+POST /api/documents/:id/comment
+Body: { content, parentCommentId? }
+Response: { comment }
+```
+
+```http
+POST /api/documents/:id/acl
+Body: { userId, canView?, canComment?, canEdit? }
+Response: { acl }
+```
+
+### Folders
+
+```http
+POST /api/folders
+Body: { name, parentId? }
+Response: { folder }
+```
+
+```http
+POST /api/folders/:id/items
+Body: { documentId }
+Response: { item }
+```
+
+### Clipboard
+
+```http
+POST /api/clipboard/paste
+Body: { documentIds: [], destinationFolderId, action: "copy" | "cut" }
+Response: { succeeded: [], failed: [{ id, reason }] }
+```
+
+### Search
+
+```http
+GET /api/search?q=query&page=1
+Response: { documents, comments, total }
+```
+
+### Audit Logs
+
+```http
+GET /api/audit-log?userId=&documentId=&action=&page=1
+Headers: Admin authentication required
+Response: { entries, total }
+```
+
+### Response Format
+
+**Success:**
+```json
+{
+  "data": { /* result */ },
+  "error": null
+}
+```
+
+**Error:**
+```json
+{
+  "data": null,
+  "error": "Error message"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (validation)
+- `401` - Unauthorized (not logged in)
+- `403` - Forbidden (insufficient permissions)
+- `404` - Not Found
+- `429` - Rate Limited
+- `500` - Internal Server Error
+
+---
+
+## Security Features
+
+### Implemented Security Measures
+
+1. **Authentication & Sessions**
+   - NextAuth.js with secure HTTP-only cookies
+   - CSRF protection built-in
+   - Session refresh on activity
+   - Bcrypt password hashing (10 rounds)
+
+2. **Authorization & Permissions**
+   - Server-side permission checks on every API route
+   - Role-based access control (ADMIN/USER)
+   - Document-level ACL (view/comment/edit)
+   - Department-based visibility
+
+3. **Input Validation**
+   - Zod schemas on all API endpoints
+   - Type-safe validation
+   - MIME type whitelist (PNG, JPEG, PDF, HTML only)
+   - File size limits (50MB max)
+
+4. **HTML Sanitization**
+   - DOMPurify server-side for WYSIWYG content
+   - Prevents XSS attacks
+   - Sanitizes before saving to database
+
+5. **Rate Limiting**
+   - Per-user rate limits:
+     - 20 uploads/hour
+     - 50 document creations/hour
+     - 100 comments/hour
+     - 10 login attempts per 5 minutes
+   - IP-based rate limiting on sensitive endpoints
+
+6. **Signed URLs for Storage**
+   - Short-lived signed URLs (15 minutes max)
+   - Service keys never exposed to client
+   - Upload URL expires after 15 minutes
+   - Download URLs regenerated on each request
+
+7. **Soft Deletes**
+   - Documents marked with `deletedAt` instead of hard delete
+   - Maintains audit trail
+   - Admin can restore deleted items
+
+8. **Audit Logging**
+   - All document actions logged
+   - Includes user, timestamp, action type, metadata
+   - Admin-only access to logs
+
+9. **Environment Variable Validation**
+   - Required variables checked on startup
+   - Application fails fast if misconfigured
+
+10. **SQL Injection Protection**
+    - Prisma ORM with parameterized queries
+    - No raw SQL concatenation
+
+### Production Recommendations
+
+- **HTTPS:** Deploy behind HTTPS (Vercel/Cloudflare)
+- **Secrets:** Use `openssl rand -base64 32` for NEXTAUTH_SECRET
+- **Database:** Enable SSL for PostgreSQL connection
+- **Storage:** Configure S3 bucket CORS and policies
+- **Rate Limiting:** Use Redis for distributed rate limiting
+- **Monitoring:** Add Sentry or LogRocket for error tracking
+- **Backups:** Automated daily database backups
+
+---
 
 ```
 Assessment/
@@ -256,839 +860,277 @@ Assessment/
 ├── postcss.config.js               # PostCSS config
 ├── tsconfig.json                    # TypeScript config
 └── package.json                     # Dependencies
-```
+---
 
-### Data Flow
+## Production Deployment
 
-1. Client (React Component)
-   - User interaction
-   - Form submission
+### Vercel Deployment (Recommended)
 
-2. API Route (Next.js)
-   - Request validation
-   - Authentication check
-   - Authorization check
+1. **Push to GitHub**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git push origin main
+   ```
 
-3. Service Layer
-   - Business logic
-   - Permission verification
-   - Data transformation
+2. **Import to Vercel**
+   - Go to https://vercel.com
+   - Click "Import Project"
+   - Select your GitHub repository
 
-4. Repository Layer
-   - Prisma operations
-   - Database queries
+3. **Configure Environment Variables**
+   Add all variables from `.env.local` in Vercel dashboard
 
-5. Database (PostgreSQL)
-   - Data persistence
-   - Transaction management
+4. **Deploy**
+   Vercel automatically builds and deploys
 
-6. Response
-   - JSON response
-   - Standardized format
-   - Error handling
-
-### Authentication Flow
-
-1. User submits login credentials
-2. NextAuth validates credentials
-3. Session created on successful login
-4. Session token stored in secure cookie
-5. Subsequent requests include session
-6. API routes verify session
-7. User role and permissions loaded
-8. Response returned with user context
-
-## Installation
-
-### Prerequisites
-
-- Node.js 18.0 or higher
-- PostgreSQL 13 or higher
-- AWS S3 account (for file storage)
-- npm or yarn package manager
-
-### Step 1: Clone Repository
-
-```bash
-git clone https://github.com/yourusername/docvault.git
-cd Assessment
-```
-
-### Step 2: Install Dependencies
-
-```bash
-npm install
-# or
-yarn install
-```
-
-### Step 3: Environment Configuration
-
-Create a .env.local file in the project root:
-
-```
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/docvault"
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key-here"
-
-# AWS S3
-AWS_REGION="us-east-1"
-AWS_ACCESS_KEY_ID="your-access-key"
-AWS_SECRET_ACCESS_KEY="your-secret-key"
-AWS_S3_BUCKET="your-bucket-name"
-
-# Application
-NODE_ENV="development"
-```
-
-### Step 4: Database Setup
-
-```bash
-# Run migrations
-npx prisma migrate dev --name init
-
-# Generate Prisma client
-npx prisma generate
-
-# Seed database (optional)
-npx prisma db seed
-```
-
-### Step 5: Start Development Server
-
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-Access the application at http://localhost:3000
-
-### Step 6: Login
-
-Default admin credentials:
-- Email: admin@example.com
-- Password: password123
-
-## Configuration
-
-### Environment Variables
-
-DATABASE_URL: PostgreSQL connection string
-NEXTAUTH_URL: Application URL for authentication callbacks
-NEXTAUTH_SECRET: Secret key for NextAuth session encryption
-AWS_REGION: AWS region for S3
-AWS_ACCESS_KEY_ID: AWS access key
-AWS_SECRET_ACCESS_KEY: AWS secret key
-AWS_S3_BUCKET: S3 bucket name for file storage
-NODE_ENV: Environment (development, production)
-
-### Prisma Configuration
-
-The schema.prisma file defines the database schema with:
-
-- User model with department memberships
-- Document model with ACL support
-- Folder model with hierarchy
-- Requirement model with status tracking
-- Comment model with nesting support
-- Department model with member management
-- AuditLog model for tracking
-- DocumentACL model for permissions
-
-### Rate Limiting
-
-Configure in lib/rateLimit.ts:
-
-- Document creation: 10 requests per minute
-- Comment creation: 15 requests per minute
-- Authentication: 10 requests per minute
-- File upload: Configurable per user
-
-## Database Schema
-
-### Models
-
-User Model:
-- id: Unique identifier
-- email: User email (unique)
-- passwordHash: Encrypted password
-- role: User role (ADMIN, USER)
-- name: Full name
-- avatarUrl: Profile picture URL
-- lastLoginAt: Last login timestamp
-- createdAt: Account creation date
-- Relations: documents, comments, departments
-
-Document Model:
-- id: Unique identifier
-- title: Document title
-- type: DocumentType (WYSIWYG, IMAGE, PDF)
-- visibility: Visibility (PRIVATE, DEPARTMENT, SHARED)
-- ownerId: Owner user ID
-- requirementId: Linked requirement ID
-- storagePath: S3 storage path
-- mimeType: File MIME type
-- contentHtml: HTML content
-- contentExcerpt: Text preview
-- thumbnailPath: Thumbnail image path
-- deletedAt: Soft delete timestamp
-- createdAt: Creation date
-- updatedAt: Last update date
-- Relations: owner, requirement, comments, acl, folders
-
-Folder Model:
-- id: Unique identifier
-- name: Folder name
-- parentId: Parent folder ID (for hierarchy)
-- createdById: Creator user ID
-- deletedAt: Soft delete timestamp
-- createdAt: Creation date
-- Relations: creator, items, children
-
-Department Model:
-- id: Unique identifier
-- name: Department name
-- createdAt: Creation date
-- Relations: members, requirements
-
-Requirement Model:
-- id: Unique identifier
-- clientName: Client name
-- dueDate: Due date
-- priority: Priority level
-- status: RequirementStatus
-- departmentId: Department ID
-- createdById: Creator ID
-- createdAt: Creation date
-- Relations: department, creator, documents
-
-Comment Model:
-- id: Unique identifier
-- content: Comment text
-- authorsId: Author user ID
-- documentId: Document ID
-- parentCommentId: Parent comment ID (for nesting)
-- createdAt: Creation date
-- Relations: author, document, replies
-
-DocumentACL Model:
-- id: Unique identifier
-- documentId: Document ID
-- userId: User ID
-- grantedById: Granter user ID
-- canView: View permission
-- canComment: Comment permission
-- canEdit: Edit permission
-- createdAt: Creation date
-
-AuditLog Model:
-- id: Unique identifier
-- action: Action type
-- userId: Actor user ID
-- documentId: Document ID
-- data: Action details
-- createdAt: Action timestamp
-
-### Relationships
-
-User -> Documents (one to many)
-User -> Comments (one to many)
-User -> Departments (many to many through DepartmentMember)
-Document -> Folder (many to many through FolderItem)
-Document -> Comments (one to many)
-Document -> ACL (one to many)
-Document -> AuditLog (one to many)
-Requirement -> Documents (one to many)
-Department -> Requirements (one to many)
-Department -> Users (many to many)
-
-## API Documentation
-
-### Authentication Endpoints
-
-POST /api/auth/signin
-- Sign in with credentials
-- Request: { email, password }
-- Response: Session token
-- Status: 200 (success), 401 (unauthorized)
-
-POST /api/auth/signout
-- Sign out current session
-- Status: 200 (success)
-
-GET /api/auth/session
-- Get current session
-- Response: User object or null
-- Status: 200 (success)
-
-### User Endpoints
-
-GET /api/users
-- List all users (Admin only)
-- Query: page, limit
-- Response: { users, total, page, totalPages }
-- Status: 200 (success), 403 (forbidden)
-
-POST /api/users
-- Create new user (Admin only)
-- Request: { name, email, password, role }
-- Response: { user }
-- Status: 201 (created), 400 (bad request), 403 (forbidden)
-
-PATCH /api/users/[id]
-- Update user (Admin only)
-- Request: { name, role }
-- Response: { user }
-- Status: 200 (success), 400 (bad request), 403 (forbidden)
-
-DELETE /api/users/[id]
-- Delete user (Admin only)
-- Response: { success }
-- Status: 200 (success), 403 (forbidden), 404 (not found)
-
-### Department Endpoints
-
-GET /api/departments
-- List all departments (Admin only)
-- Query: page, limit
-- Response: { departments }
-- Status: 200 (success), 403 (forbidden)
-
-POST /api/departments
-- Create department (Admin only)
-- Request: { name }
-- Response: { department }
-- Status: 201 (created), 400 (bad request), 403 (forbidden)
-
-POST /api/departments/[id]
-- Update department (Admin only)
-- Request: { name }
-- Response: { department }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-DELETE /api/departments/[id]
-- Delete department (Admin only)
-- Response: { success }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-DELETE /api/departments/[id]/members/[userId]
-- Remove member from department (Admin only)
-- Response: { success }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-### Document Endpoints
-
-GET /api/documents
-- List documents
-- Query: folderId, q, page, limit
-- Response: { documents, total, page, totalPages }
-- Status: 200 (success), 401 (unauthorized)
-
-POST /api/documents/create
-- Create new document
-- Request: { title, type, visibility, contentHtml, requirementId, folderId, mimeType, storagePath }
-- Response: { document }
-- Status: 201 (created), 401 (unauthorized), 429 (rate limited)
-
-GET /api/documents/[id]
-- Get document details with comments
-- Query: page, limit
-- Response: { document, comments, total }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-PATCH /api/documents/[id]
-- Update document
-- Request: { title, visibility, contentHtml }
-- Response: { document }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-DELETE /api/documents/[id]
-- Delete document (soft delete)
-- Response: { success }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-POST /api/documents/[id]/restore
-- Restore deleted document (Admin only)
-- Response: { document }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-GET /api/documents/[id]/thumbnail
-- Get document thumbnail
-- Response: { thumbnailUrl }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-GET /api/documents/[id]/comment
-- List document comments
-- Query: page, limit
-- Response: { comments, total, page, totalPages }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-POST /api/documents/[id]/comment
-- Add comment to document
-- Request: { content, parentCommentId }
-- Response: { comment }
-- Status: 201 (created), 401 (unauthorized), 403 (forbidden), 429 (rate limited)
-
-POST /api/documents/[id]/acl
-- Grant document access
-- Request: { userId, canView, canComment, canEdit }
-- Response: { acl }
-- Status: 200 (success), 401 (unauthorized), 403 (forbidden)
-
-### Folder Endpoints
-
-GET /api/folders
-- List all folders
-- Response: { folders }
-- Status: 200 (success), 401 (unauthorized)
-
-POST /api/folders
-- Create new folder
-- Request: { name, parentId }
-- Response: { folder }
-- Status: 201 (created), 401 (unauthorized)
-
-GET /api/folders/[id]
-- Get folder details
-- Response: { folder }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-PATCH /api/folders/[id]
-- Update folder
-- Request: { name }
-- Response: { folder }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-DELETE /api/folders/[id]
-- Delete folder
-- Response: { success }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-GET /api/folders/[id]/items
-- List folder documents
-- Query: page, limit
-- Response: { items, page }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-POST /api/folders/[id]/items
-- Add document to folder
-- Request: { documentId }
-- Response: { item }
-- Status: 201 (created), 400 (already in folder), 404 (not found)
-
-### Requirement Endpoints
-
-GET /api/requirements
-- List requirements
-- Query: departmentId, page, limit
-- Response: { requirements, total, page, totalPages }
-- Status: 200 (success), 401 (unauthorized)
-
-POST /api/requirements
-- Create requirement
-- Request: { clientName, dueDate, priority, departmentId }
-- Response: { requirement }
-- Status: 201 (created), 401 (unauthorized)
-
-GET /api/requirements/[id]
-- Get requirement details
-- Response: { requirement }
-- Status: 200 (success), 404 (not found), 401 (unauthorized)
-
-DELETE /api/requirements/[id]
-- Delete requirement (Admin only)
-- Response: { success }
-- Status: 200 (success), 404 (not found), 403 (forbidden)
-
-### Search Endpoints
-
-GET /api/search
-- Search documents and comments
-- Query: q, page
-- Response: { documents, comments }
-- Status: 200 (success), 401 (unauthorized)
-
-### Clipboard Endpoints
-
-GET /api/clipboard
-- Get clipboard state
-- Response: { documentIds, action }
-- Status: 200 (success), 401 (unauthorized)
-
-POST /api/clipboard/paste
-- Paste clipboard items
-- Request: { documentIds, destinationFolderId, action }
-- Response: { succeeded, failed }
-- Status: 200 (success), 401 (unauthorized)
-
-### Audit Log Endpoints
-
-GET /api/audit-log
-- List audit entries (Admin only)
-- Query: userId, documentId, action, page, limit
-- Response: { entries, total, page, totalPages }
-- Status: 200 (success), 403 (forbidden)
-
-### Dashboard Endpoints
-
-GET /api/dashboard/stats
-- Get dashboard statistics (Admin only)
-- Response: { stats, recentDocuments, recentActivity }
-- Status: 200 (success), 403 (forbidden)
-
-### Upload Endpoints
-
-POST /api/uploads/request
-- Request S3 upload URL
-- Request: { fileName, contentType, size }
-- Response: { uploadUrl, key }
-- Status: 200 (success), 401 (unauthorized), 429 (rate limited)
-
-### Response Format
-
-All responses follow standard format:
-
-Success Response:
-```json
-{
-  "data": { /* response data */ },
-  "error": null
-}
-```
-
-Error Response:
-```json
-{
-  "data": null,
-  "error": "Error message"
-}
-```
-
-Status Codes:
-- 200: OK - Successful request
-- 201: Created - Resource created
-- 400: Bad Request - Invalid input
-- 401: Unauthorized - Authentication required
-- 403: Forbidden - Authorization denied
-- 404: Not Found - Resource not found
-- 429: Too Many Requests - Rate limited
-- 500: Internal Server Error - Server error
-
-## Frontend Components
-
-### Layout Components
-
-Sidebar (components/layout/Sidebar.tsx)
-- Responsive collapsible sidebar
-- Folder tree navigation
-- Links to main pages
-- Search integration
-- User menu access
-
-Topbar (components/layout/Topbar.tsx)
-- Search bar with live results
-- User menu with logout
-- Breadcrumb navigation
-- Mobile menu toggle
-- Dark mode toggle
-
-ClipboardBar (components/layout/ClipboardBar.tsx)
-- Floating clipboard indicator
-- Shows copied/cut items
-- Paste action button
-- Clear clipboard button
-- Synced with server state
-
-### Page Components
-
-Dashboard (app/page.tsx)
-- Admin dashboard with statistics
-- Recent documents list
-- Recent activity for admin
-- User documents for regular users
-- Requirements overview
-
-Login Page (app/login/page.tsx)
-- Email and password form
-- Form validation
-- Error handling
-- Remember me option
-- Redirect to dashboard on success
-
-Admin Panel (app/admin/page.tsx)
-- Tabbed interface (Users, Departments, Requirements)
-- User management with edit/delete
-- Department management with members
-- Requirement creation and viewing
-- Batch operations support
-
-Documents Page (app/documents/[id]/page.tsx)
-- Rich text editor with TipTap
-- Comments section with nesting
-- Document sharing and ACL
-- Document metadata
-- Version history (future)
-
-Folders Page (app/folders/[id]/page.tsx)
-- Hierarchical folder navigation
-- Document grid display
-- Bulk operations (copy/cut/paste)
-- Folder creation and management
-- Upload functionality
-- Pagination support
-
-Requirements Page (app/requirements/[id]/page.tsx)
-- Requirement details view
-- Linked documents list
-- Status tracking
-- Priority display
-- Timeline information
-
-Search Page (app/search/page.tsx)
-- Search form with autocomplete
-- Result highlighting
-- Document and comment results
-- Pagination
-- Advanced filters
-
-## Authentication & Authorization
-
-### Authentication
-
-NextAuth.js handles authentication with:
-
-- Credential-based login
-- Secure session management
-- CSRF protection
-- Secure cookies
-- Session refresh
-
-Authentication Flow:
-1. User enters credentials on login page
-2. Request sent to NextAuth signin endpoint
-3. Credentials validated against database
-4. Session created if valid
-5. Secure session token returned
-6. Token stored in HTTP-only cookie
-7. Subsequent requests include session
-
-### Authorization
-
-Permission system includes:
-
-Role-Based Access Control:
-- Admin: Full system access
-- User: Limited access
-- Guest: Read-only access
-
-Permission Checks:
-- Document visibility verification
-- Folder access validation
-- ACL enforcement
-- Department-based access
-- Method-based restrictions
-
-### Permission Functions
-
-canViewDocument() - Check document visibility
-canEditDocument() - Check edit permission
-canCommentDocument() - Check comment permission
-canManageFolder() - Check folder ownership
-canManageDepartment() - Check admin status
-canDeleteDocument() - Check ownership or admin status
-
-## Deployment
-
-### Vercel Deployment
-
-1. Push code to GitHub
-2. Import project in Vercel dashboard
-3. Set environment variables
-4. Configure database connection
-5. Deploy
-6. Access deployed application
+5. **Database**
+   - Use Vercel Postgres or external PostgreSQL (Supabase, Railway, Neon)
+   - Run migrations: `npx prisma migrate deploy`
 
 ### Docker Deployment
 
-1. Build Docker image:
+**Build Image:**
 ```bash
 docker build -t docvault .
 ```
 
-2. Run container:
+**Run Container:**
 ```bash
 docker run -p 3000:3000 \
-  -e DATABASE_URL="..." \
-  -e NEXTAUTH_URL="..." \
+  -e DATABASE_URL="postgresql://..." \
+  -e NEXTAUTH_URL="https://yourdomain.com" \
   -e NEXTAUTH_SECRET="..." \
+  -e SUPABASE_S3_REGION="..." \
+  -e SUPABASE_S3_ENDPOINT="..." \
+  -e SUPABASE_S3_ACCESS_KEY_ID="..." \
+  -e SUPABASE_S3_SECRET_ACCESS_KEY="..." \
+  -e SUPABASE_S3_BUCKET_NAME="..." \
   docvault
 ```
 
-3. Access at http://localhost:3000
+### Manual Server Deployment
+
+```bash
+# 1. Install dependencies
+npm install --production
+
+# 2. Build application
+npm run build
+
+# 3. Run migrations
+npx prisma migrate deploy
+
+# 4. Start server
+npm start
+```
 
 ### Production Checklist
 
-- Use strong NEXTAUTH_SECRET
-- Enable HTTPS/SSL
-- Configure database backup
-- Set up monitoring
-- Enable rate limiting
-- Configure CORS properly
-- Use environment variables
-- Set NODE_ENV=production
-- Configure S3 bucket policies
-- Enable logging
-- Set up error tracking
+- [ ] Set strong `NEXTAUTH_SECRET` (32+ characters)
+- [ ] Enable HTTPS/SSL certificate
+- [ ] Configure database connection pooling
+- [ ] Set up automated database backups
+- [ ] Configure S3 bucket CORS policies
+- [ ] Enable server-side logging (Winston, Pino)
+- [ ] Set up error tracking (Sentry)
+- [ ] Configure CDN for static assets
+- [ ] Enable PostgreSQL SSL connection
+- [ ] Set `NODE_ENV=production`
+- [ ] Test all permission scenarios
+- [ ] Load test API endpoints
+- [ ] Review rate limit configurations
+
+---
+
+## Project Structure
+
+```
+Assessment/
+├── app/                              # Next.js app directory
+│   ├── api/                         # API endpoints
+│   │   ├── auth/                    # Authentication (NextAuth + signup)
+│   │   ├── users/                   # User management (admin)
+│   │   ├── departments/             # Department CRUD
+│   │   ├── documents/               # Document operations
+│   │   ├── folders/                 # Folder management
+│   │   ├── requirements/            # Requirement tracking
+│   │   ├── search/                  # Full-text search
+│   │   ├── audit-log/              # Audit logging
+│   │   ├── clipboard/              # Clipboard paste
+│   │   ├── dashboard/              # Dashboard stats
+│   │   └── uploads/                # Upload signed URL request
+│   ├── documents/[id]/             # Document detail pages
+│   ├── folders/[id]/               # Folder pages
+│   ├── requirements/[id]/          # Requirements pages
+│   ├── admin/                       # Admin panel
+│   ├── search/                      # Search page
+│   ├── login/                       # Login page
+│   ├── signup/                      # Self-registration page
+│   ├── layout.tsx                   # Root layout
+│   ├── page.tsx                     # Dashboard (home)
+│   └── globals.css                  # Global styles
+├── components/
+│   ├── features/                    # Feature-specific components
+│   │   ├── admin/                  # Admin UI components
+│   │   ├── documents/              # Document components
+│   │   ├── folders/                # Folder components
+│   │   ├── requirements/           # Requirement components
+│   │   └── search/                 # Search components
+│   ├── layout/                      # Layout components
+│   │   ├── Sidebar.tsx             # Navigation sidebar
+│   │   ├── Topbar.tsx              # Top bar
+│   │   └── ClipboardBar.tsx        # Clipboard indicator
+│   └── ui/                          # Reusable UI components
+│       ├── Button.tsx
+│       ├── Modal.tsx
+│       ├── Input.tsx
+│       └── ...
+├── lib/
+│   ├── services/                    # Business logic layer
+│   │   ├── userService.ts          # User operations
+│   │   ├── documentService.ts      # Document operations
+│   │   ├── folderService.ts        # Folder operations
+│   │   ├── departmentService.ts    # Department operations
+│   │   ├── requirementService.ts   # Requirement operations
+│   │   ├── commentService.ts       # Comment operations
+│   │   ├── aclService.ts           # ACL management
+│   │   ├── clipboardService.ts     # Clipboard paste logic
+│   │   ├── searchService.ts        # Basic search
+│   │   ├── searchServiceAdvanced.ts # Full-text search
+│   │   ├── auditLogService.ts      # Audit logging
+│   │   ├── uploadService.ts        # Upload URL generation
+│   │   ├── dashboardService.ts     # Dashboard stats
+│   │   ├── thumbnailService.ts     # Thumbnail generation
+│   │   └── twoFactorAuthService.ts # 2FA (partial)
+│   ├── repositories/                # Data access layer
+│   │   ├── userRepository.ts
+│   │   ├── documentRepository.ts
+│   │   ├── folderRepository.ts
+│   │   ├── departmentRepository.ts
+│   │   ├── requirementRepository.ts
+│   │   ├── commentRepository.ts
+│   │   ├── auditLogRepository.ts
+│   │   └── dashboardRepository.ts
+│   ├── helpers/
+│   │   ├── userContext.ts          # Get user departments
+│   │   └── htmlSanitizer.ts        # DOMPurify sanitization
+│   ├── storage/
+│   │   └── s3Service.ts            # Signed URL generation
+│   ├── utils/
+│   │   └── api-response.ts         # Standardized API responses
+│   ├── constants/
+│   │   ├── config.ts               # App constants
+│   │   └── schemas.ts              # Shared schemas
+│   ├── permissions.ts               # Permission check functions
+│   ├── validations.ts               # Zod validation schemas
+│   ├── prisma.ts                    # Prisma client singleton
+│   ├── rateLimit.ts                # Rate limiting logic
+│   ├── env.ts                       # Environment variable validation
+│   └── s3.ts                        # AWS S3 client configuration
+├── prisma/
+│   ├── schema.prisma                # Database schema
+│   └── generated/                   # Generated Prisma client
+├── store/
+│   └── clipboard.ts                 # Zustand clipboard store
+├── hooks/
+│   ├── useDebounce.ts              # Custom hooks
+│   ├── useDocument.ts
+│   ├── useFolder.ts
+│   └── ...
+├── types/
+│   └── modules.d.ts                 # TypeScript declarations
+├── docs/
+│   └── 2FA_IMPLEMENTATION.md       # 2FA setup guide
+├── auth.ts                          # NextAuth configuration
+├── middleware.ts                    # Next.js middleware (auth)
+├── next.config.js                   # Next.js config
+├── tailwind.config.js              # Tailwind config
+├── tsconfig.json                    # TypeScript config
+├── prisma.config.ts                # Prisma config
+├── seed.js                          # Database seeding script
+├── package.json                     # Dependencies
+├── .env.example                     # Example environment variables
+└── README.md                        # This file
+```
+
+---
 
 ## Development
 
-### Running Development Server
+### Running Tests
 
 ```bash
-npm run dev
-```
+# Unit tests (if implemented)
+npm test
 
-Server runs on http://localhost:3000
+# Type checking
+npx tsc --noEmit
 
-### Building for Production
-
-```bash
-npm run build
-npm run start
-```
-
-### Linting
-
-```bash
+# Linting
 npm run lint
 ```
 
 ### Database Migrations
 
-Create migration:
+**Create migration:**
 ```bash
-npx prisma migrate dev --name description
+npx prisma migrate dev --name description_here
 ```
 
-Apply migrations:
+**Apply migrations (production):**
 ```bash
 npx prisma migrate deploy
 ```
 
-### Testing
-
-Run tests:
+**Reset database (dev only):**
 ```bash
-npm test
+npx prisma migrate reset
 ```
 
-### Code Structure
+**Prisma Studio (GUI):**
+```bash
+npx prisma studio
+```
 
-Features are organized in layers:
+### Seeding Database
 
-1. API Routes (app/api)
-   - Request validation
-   - Authentication
-   - Route handling
+```bash
+node seed.js
+```
 
-2. Services (lib/services)
-   - Business logic
-   - Permission checks
-   - Data transformation
-
-3. Repositories (lib/repositories)
-   - Database access
-   - Prisma operations
-   - Query building
-
-4. Frontend (app, components)
-   - User interface
-   - Client-side logic
-   - State management
-
-### Best Practices
-
-- Use TypeScript for type safety
-- Validate all inputs
-- Check permissions on backend
-- Use transactions for data consistency
-- Log important operations
-- Handle errors gracefully
-- Use environment variables
-- Follow naming conventions
-- Write comments for complex logic
-- Test edge cases
-
-## Contributing
-
-Guidelines for contributing:
-
-1. Fork the repository
-2. Create feature branch (git checkout -b feature/feature-name)
-3. Make changes with clear commits
-4. Write or update tests
-5. Follow code style
-6. Submit pull request
-7. Request review from maintainers
-
-Commit Message Format:
-- feat: New feature
-- fix: Bug fix
-- docs: Documentation
-- style: Formatting
-- refactor: Code restructuring
-- test: Tests
-- chore: Dependencies
-
-Code Style:
-- Use TypeScript strict mode
-- 2-space indentation
-- Semicolons required
-- Single quotes for strings
-- PascalCase for components
-- camelCase for variables
-- kebab-case for filenames
-
-## Support & Documentation
-
-For support, questions, or issues:
-
-1. Check existing issues on GitHub
-2. Create new issue with details
-3. Include error messages
-4. Provide reproduction steps
-5. Contact maintainers
-
-Additional Resources:
-- Next.js Documentation: https://nextjs.org/docs
-- Prisma Documentation: https://www.prisma.io/docs
-- TypeScript Handbook: https://www.typescriptlang.org/docs
-- PostgreSQL Documentation: https://www.postgresql.org/docs
-- NextAuth.js Documentation: https://next-auth.js.org
-
-## License
-
-DocVault is proprietary software. All rights reserved.
-
-## Version History
-
-v1.0.0 (Current)
-- Initial release
-- 30 API endpoints
-- Full CRUD operations
-- Role-based access control
-- Audit logging
-- Comment system
-- Requirement tracking
-- Department management
-- File upload support
-- Advanced search
+Creates:
+- Admin user: `admin@docvault.com` / `admin123`
+- Regular user: `user@docvault.com` / `user123`
+- Sample departments, requirements, documents
 
 ---
 
-Last Updated: March 5, 2026
-Maintained by: Development Team
+## 📝 License
+
+This project is part of an assessment. All rights reserved.
+
+---
+
+## Contributing
+
+This is an assessment project. For production use, consider:
+- Adding comprehensive test coverage (Jest, React Testing Library)
+- Implementing real-time features with WebSockets
+- Adding email notifications
+- Completing 2FA frontend integration
+- Adding document versioning
+- Implementing folder permission inheritance
+- Adding bulk operations UI
+- Mobile app development
+
+---
+
+## Support
+
+For questions or issues, please contact the repository owner or create an issue in the GitHub repository.
+
+---
+
+**Built with Next.js, TypeScript, PostgreSQL, and Supabase Storage**
