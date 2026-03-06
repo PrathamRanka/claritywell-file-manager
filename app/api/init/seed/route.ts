@@ -1,8 +1,9 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { NextResponse } from 'next/server';
 
-export async function POST() {
+async function POSTHandler() {
   try {
     console.log('Starting seed process...');
     console.log('Database URL present:', !!process.env.DATABASE_URL);
@@ -58,7 +59,7 @@ export async function POST() {
       return null;
     });
 
-    return NextResponse.json({
+    return timedJson({
       message: 'Database seeded successfully',
       users: [admin.email, testUser.email],
       department: department?.name,
@@ -66,10 +67,12 @@ export async function POST() {
     });
   } catch (error: any) {
     console.error('Full seed error:', error);
-    return NextResponse.json({ 
+    return timedJson({ 
       error: 'Seed failed',
       details: error.message,
       stack: error.stack
     }, { status: 500 });
   }
 }
+
+export const POST = withRouteMetrics('/api/init/seed', 'POST', POSTHandler);

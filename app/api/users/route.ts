@@ -1,10 +1,11 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createUserSchema } from '@/lib/validations';
 import { createUserService, listUsersService } from '@/lib/services/userService';
 import { apiSuccess, apiForbidden, apiUnauthorized, apiError, apiValidationError } from '@/lib/utils/api-response';
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+async function POSTHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -64,3 +65,6 @@ export async function POST(req: Request) {
     return apiError(errorMessage, 500);
   }
 }
+
+export const GET = withRouteMetrics('/api/users', 'GET', GETHandler);
+export const POST = withRouteMetrics('/api/users', 'POST', POSTHandler);

@@ -1,3 +1,4 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
@@ -5,14 +6,14 @@ import { auth } from '@/auth';
 // This endpoint provides a server-side clipboard state placeholder.
 // In a more advanced implementation, this could store clipboard state per user.
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
-   return NextResponse.json({
+   return timedJson({
       data: {
         documentIds: [],
         action: null, // 'copy' | 'cut' | null
@@ -21,6 +22,8 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('GET Clipboard Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const GET = withRouteMetrics('/api/clipboard', 'GET', GETHandler);

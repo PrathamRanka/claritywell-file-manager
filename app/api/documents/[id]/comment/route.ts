@@ -1,17 +1,18 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createCommentSchema } from '@/lib/validations';
 import { checkCommentRateLimit } from '@/lib/rateLimit';
 import { createCommentService, listCommentsService } from '@/lib/services/commentService';
 
-export async function GET(
+async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -27,25 +28,25 @@ export async function GET(
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
+      return timedJson({ data: null, error: result.error }, { status: result.status });
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    return timedJson({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Comments Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+async function POSTHandler(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!checkCommentRateLimit(session.user.id)) {
-      return NextResponse.json(
+      return timedJson(
         { data: null, error: 'Rate limit exceeded: 100 comments per hour' },
         { status: 429 }
       );
@@ -54,7 +55,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const body = await req.json();
     const parsed = createCommentSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+      return timedJson({ data: null, error: parsed.error.issues }, { status: 400 });
     }
 
     const { content, parentCommentId } = parsed.data;
@@ -68,12 +69,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
+      return timedJson({ data: null, error: result.error }, { status: result.status });
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    return timedJson({ data: result.data, error: null });
   } catch (error) {
     console.error('CREATE Comment Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const GET = withRouteMetrics('/api/documents/[id]/comment', 'GET', GETHandler);
+export const POST = withRouteMetrics('/api/documents/[id]/comment', 'POST', POSTHandler);

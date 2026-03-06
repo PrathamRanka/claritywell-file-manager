@@ -1,3 +1,4 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkLoginRateLimit } from '@/lib/rateLimit';
@@ -12,14 +13,14 @@ const signupSchema = z.object({
 
 type SignupRequest = z.infer<typeof signupSchema>;
 
-export async function POST(req: Request) {
+async function POSTHandler(req: Request) {
   try {
     const body = await req.json();
 
     // Validate request
     const parsed = signupSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
+      return timedJson(
         {
           data: null,
           error: parsed.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
 
     // Rate limit signup attempts per email
     if (!checkLoginRateLimit(email)) {
-      return NextResponse.json(
+      return timedJson(
         { data: null, error: 'Too many signup attempts. Please try again later.' },
         { status: 429 }
       );
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
+      return timedJson(
         { data: null, error: 'Email already registered. Please login instead.' },
         { status: 409 }
       );
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(
+    return timedJson(
       {
         data: {
           user: newUser,
@@ -83,6 +84,8 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error('Signup error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const POST = withRouteMetrics('/api/auth/signup', 'POST', POSTHandler);

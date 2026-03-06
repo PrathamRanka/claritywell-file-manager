@@ -54,9 +54,24 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleShare = async () => {
-    toast.success('Sharing updated');
-    setShareModalOpen(false);
+  const handleShare = async (visibility: 'PRIVATE' | 'DEPARTMENT' | 'SHARED') => {
+    try {
+      const res = await fetch(`/api/documents/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visibility }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update visibility');
+      }
+
+      await mutateDocument();
+      toast.success('Visibility updated');
+      setShareModalOpen(false);
+    } catch {
+      toast.error('Failed to update visibility');
+    }
   };
 
   const handleDownload = () => {
@@ -144,6 +159,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       <ShareModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
+        currentVisibility={(document.visibility as any) || 'PRIVATE'}
         onShare={handleShare}
       />
     </div>

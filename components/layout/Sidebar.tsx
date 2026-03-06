@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Plus, Home, Building2, FileText } from 'lucide-react';
 import useSWR from 'swr';
+import { toast } from 'sonner';
 
 interface FolderNode {
   id: string;
@@ -63,7 +64,33 @@ const fetcher = async (url: string): Promise<FolderNode[]> => {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const { data: folders, error } = useSWR<FolderNode[]>('/api/folders', fetcher);
+  const { data: folders, error, mutate } = useSWR<FolderNode[]>('/api/folders', fetcher);
+
+  const handleCreateFolder = async (parentId?: string | null) => {
+    const name = window.prompt('Enter folder name');
+    if (!name || !name.trim()) return;
+
+    try {
+      const res = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), parentId: parentId ?? null }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.error?.message || payload?.error || 'Failed to create folder');
+      }
+
+      toast.success('Folder created');
+      await mutate();
+      if (parentId) {
+        setExpandedFolders((prev) => new Set(prev).add(parentId));
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create folder');
+    }
+  };
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -166,7 +193,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation();
-              // TODO: Implement new subfolder creation
+              handleCreateFolder(folder.id);
             }}
             aria-label="Create subfolder"
           >
@@ -247,8 +274,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Folders section */}
           <div>
-            <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Folders
+            <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span>Folders</span>
+              <button
+                onClick={() => handleCreateFolder(null)}
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                aria-label="Create folder"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div className="space-y-0.5">
               {error && (

@@ -121,15 +121,16 @@ export async function listFolderItemsService(params: {
 
   const userDepartmentIds = await getUserDepartmentIds(userId);
   const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
+  const hasManagePermission = canManageFolder(userId, folder, userRole);
 
-  if (!canManageFolder(userId, folder, userRole)) {
+  if (!hasManagePermission) {
     const visibleItemCount = await countFolderItemsByDocumentWhere(folderId, docWhere);
     if (visibleItemCount === 0) {
       return { error: 'Forbidden', status: 403 };
     }
   }
 
-  const effectiveDocWhere = canManageFolder(userId, folder, userRole)
+  const effectiveDocWhere = hasManagePermission
     ? { deletedAt: null }
     : docWhere;
 

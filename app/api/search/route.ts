@@ -1,9 +1,10 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { advancedSearchService } from '@/lib/services/searchServiceAdvanced';
 import { apiSuccess, apiUnauthorized, apiError } from '@/lib/utils/api-response';
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -34,3 +35,5 @@ export async function GET(req: Request) {
     return apiError('Internal Server Error', 500);
   }
 }
+
+export const GET = withRouteMetrics('/api/search', 'GET', GETHandler);

@@ -2,6 +2,7 @@ import { getServerSession, type DefaultSession, type NextAuthOptions } from "nex
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "./lib/prisma";
+import { recordAuthTiming } from "./lib/utils/route-metrics";
 
 declare module "next-auth" {
   interface Session {
@@ -91,5 +92,10 @@ export const authOptions: NextAuthOptions = {
 
 // v4-compatible server auth helper used by route handlers.
 export async function auth() {
-  return getServerSession(authOptions);
+  const started = performance.now();
+  try {
+    return await getServerSession(authOptions);
+  } finally {
+    recordAuthTiming(performance.now() - started);
+  }
 }

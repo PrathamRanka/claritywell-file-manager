@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 // Shared schemas
-const visibilitySchema = z.enum(['PRIVATE', 'DEPARTMENT', 'SHARED']);
+const visibilitySchema = z.preprocess(
+  (value) => (typeof value === 'string' ? value.toUpperCase() : value),
+  z
+    .enum(['PRIVATE', 'DEPARTMENT', 'SHARED', 'PUBLIC'])
+    .transform((value) => (value === 'PUBLIC' ? 'SHARED' : value))
+);
 const documentTypeSchema = z.enum(['WYSIWYG', 'IMAGE', 'PDF']);
 const prioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 const roleSchema = z.enum(['ADMIN', 'USER']);

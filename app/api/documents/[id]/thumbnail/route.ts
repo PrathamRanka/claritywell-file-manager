@@ -1,14 +1,15 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getThumbnailUrlService } from '@/lib/services/documentService';
 
-export async function GET(
+async function GETHandler(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.id) return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
 
     const result = await getThumbnailUrlService({
       documentId: params.id,
@@ -17,12 +18,14 @@ export async function GET(
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
+      return timedJson({ data: null, error: result.error }, { status: result.status });
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    return timedJson({ data: result.data, error: null });
   } catch (error) {
     console.error('GET Thumbnail Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const GET = withRouteMetrics('/api/documents/[id]/thumbnail', 'GET', GETHandler);

@@ -1,3 +1,4 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createFolderSchema } from '@/lib/validations';
@@ -5,7 +6,7 @@ import { checkFolderCreationRateLimit } from '@/lib/rateLimit';
 import { listFoldersService, createFolderService } from '@/lib/services/folderService';
 import { apiSuccess, apiUnauthorized, apiError, apiValidationError, apiRateLimited } from '@/lib/utils/api-response';
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) return apiUnauthorized();
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+async function POSTHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) return apiUnauthorized();
@@ -50,3 +51,6 @@ export async function POST(req: Request) {
     return apiError('Internal Server Error', 500);
   }
 }
+
+export const GET = withRouteMetrics('/api/folders', 'GET', GETHandler);
+export const POST = withRouteMetrics('/api/folders', 'POST', POSTHandler);

@@ -1,16 +1,17 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { updateDocumentAclSchema } from '@/lib/validations';
 import { upsertAclService } from '@/lib/services/aclService';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+async function POSTHandler(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.id) return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
     const parsed = updateDocumentAclSchema.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ data: null, error: parsed.error.issues }, { status: 400 });
+    if (!parsed.success) return timedJson({ data: null, error: parsed.error.issues }, { status: 400 });
 
     const { userId, canView, canComment, canEdit } = parsed.data;
 
@@ -25,12 +26,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     });
 
     if (result.error) {
-      return NextResponse.json({ data: null, error: result.error }, { status: result.status });
+      return timedJson({ data: null, error: result.error }, { status: result.status });
     }
 
-    return NextResponse.json({ data: result.data, error: null });
+    return timedJson({ data: result.data, error: null });
   } catch (error) {
     console.error('ACL UPSERT Error:', error);
-    return NextResponse.json({ data: null, error: 'Internal Server Error' }, { status: 500 });
+    return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const POST = withRouteMetrics('/api/documents/[id]/acl', 'POST', POSTHandler);

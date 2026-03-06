@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { timedJson } from '@/lib/utils/route-metrics';
 
 export interface ApiResponse<T> {
   data: T;
@@ -23,7 +24,7 @@ export interface ApiErrorResponse {
  */
 
 export function apiSuccess<T>(data: T, status = 200): NextResponse<ApiResponse<T>> {
-  return NextResponse.json({ data, error: null }, { status });
+  return timedJson({ data, error: null }, { status });
 }
 
 export function apiError(
@@ -32,7 +33,7 @@ export function apiError(
   code?: string,
   details?: any
 ): NextResponse<ApiErrorResponse> {
-  return NextResponse.json(
+  return timedJson(
     {
       data: null,
       error: {

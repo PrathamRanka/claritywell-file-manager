@@ -5,6 +5,7 @@ import { signOut } from 'next-auth/react';
 import { Search, Menu, User, LogOut, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'sonner';
 
 interface TopbarProps {
   user: {
@@ -30,6 +31,20 @@ export function Topbar({ user, onMenuClick }: TopbarProps) {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/login' });
+  };
+
+  const handleNotifications = () => {
+    if (user.role === 'ADMIN') {
+      toast.info('Admin Notifications', {
+        description: 'You have system admin privileges. No new notifications at this time.',
+        duration: 4000,
+      });
+    } else {
+      toast.info('Notifications', {
+        description: 'No new notifications at this time.',
+        duration: 3000,
+      });
+    }
   };
 
   const getRoleBadgeColor = (role?: string) => {
@@ -89,8 +104,10 @@ export function Topbar({ user, onMenuClick }: TopbarProps) {
         <div className="flex items-center gap-2">
           {/* Notifications */}
           <button
+            onClick={handleNotifications}
             className="relative p-2 rounded-lg hover:bg-muted transition-colors focus-ring"
             aria-label="Notifications"
+            title={user.role === 'ADMIN' ? 'Admin Notifications' : 'Notifications'}
           >
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />

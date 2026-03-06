@@ -85,7 +85,11 @@ export default function AdminPage() {
       </div>
 
       {/* Dashboard Overview */}
-      <AdminDashboardOverview />
+      <AdminDashboardOverview
+        totalUsers={users.length}
+        totalDepartments={departments.length}
+        totalRequirements={requirements.length}
+      />
 
       {/* Tabs */}
       <div className="border-b border-border mb-6">

@@ -5,7 +5,16 @@ export async function listDepartments(skip: number, limit: number) {
     orderBy: { createdAt: 'desc' },
     take: limit,
     skip,
-    select: { id: true, name: true, createdAt: true },
+    select: { 
+      id: true, 
+      name: true, 
+      createdAt: true,
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, role: true } }
+        }
+      }
+    },
   });
 }
 

@@ -3,12 +3,14 @@
 import { useClipboardStore } from '@/store/clipboard';
 import { Copy, Scissors, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
 export function ClipboardBar() {
   const { items, action, clear } = useClipboardStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Sync with server clipboard state on mount
   useEffect(() => {
@@ -28,9 +30,53 @@ export function ClipboardBar() {
   }, []);
 
   const handlePaste = async () => {
-    // This will be used in the folder page to paste items
-    // For now, just show a toast
-    toast.info('Navigate to a folder to paste items');
+    const match = pathname.match(/^\/folders\/([^/]+)$/);
+    const destinationFolderId = match?.[1];
+
+    if (!destinationFolderId) {
+      toast.info('Navigate to a folder to paste items');
+      return;
+    }
+
+    if (!action || items.length === 0) {
+      toast.info('Clipboard is empty');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/clipboard/paste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentIds: items.map((item) => item.id),
+          destinationFolderId,
+          action,
+        }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || 'Paste failed');
+      }
+
+      const succeeded = payload?.data?.succeeded?.length ?? 0;
+      const failed = payload?.data?.failed?.length ?? 0;
+
+      if (succeeded > 0) {
+        toast.success(`Pasted ${succeeded} item${succeeded > 1 ? 's' : ''}`);
+      }
+      if (failed > 0) {
+        toast.warning(`${failed} item${failed > 1 ? 's' : ''} could not be pasted`);
+      }
+
+      if (action === 'cut' || succeeded > 0) {
+        clear();
+      }
+
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error?.message || 'Paste failed');
+    }
   };
 
   if (items.length === 0) {

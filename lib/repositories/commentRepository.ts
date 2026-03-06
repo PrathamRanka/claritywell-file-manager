@@ -19,6 +19,10 @@ export async function listComments(documentId: string, skip: number, limit: numb
 
   // Get all reply comments for the top-level comments
   const topLevelIds = topLevelComments.map(c => c.id);
+  if (topLevelIds.length === 0) {
+    return topLevelComments;
+  }
+
   const replies = await prisma.comment.findMany({
     where: { 
       documentId,

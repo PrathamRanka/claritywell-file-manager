@@ -1,19 +1,20 @@
+import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { dashboardStatsService } from '@/lib/services/dashboardService';
 
-export async function GET(req: Request) {
+async function GETHandler(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ data: null, error: 'Unauthorized' }, { status: 401 });
+      return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
     }
 
     const result = await dashboardStatsService();
     const stats = result.data?.stats;
     
     // Return stats in the format expected by the frontend
-    return NextResponse.json({
+    return timedJson({
       totalUsers: stats?.userCount || 0,
       totalDocuments: stats?.documentCount || 0,
       totalDepartments: stats?.departmentCount || 0,
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('GET Dashboard Stats Error:', error);
-    return NextResponse.json({ 
+    return timedJson({ 
       totalUsers: 0,
       totalDocuments: 0,
       totalDepartments: 0,
@@ -29,3 +30,5 @@ export async function GET(req: Request) {
     }, { status: 500 });
   }
 }
+
+export const GET = withRouteMetrics('/api/dashboard/stats', 'GET', GETHandler);
