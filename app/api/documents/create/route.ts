@@ -43,14 +43,14 @@ async function POSTHandler(req: Request) {
     // Generate thumbnail if document has storage path (async, don't wait)
     if (storagePath) {
       generateThumbnailService({
-        documentId: result.id,
+        documentId: result.data.document.id,
         documentType: type,
         storagePath,
         mimeType: mimeType || undefined,
       }).catch((err) => console.error('Thumbnail generation failed:', err));
     }
 
-    return timedJson({ data: { document: result }, error: null });
+    return timedJson({ data: { document: result.data.document }, error: null });
   } catch (error) {
     console.error('CREATE Document Error:', error);
     return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });

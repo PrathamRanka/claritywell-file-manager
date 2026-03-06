@@ -52,10 +52,6 @@ async function POSTHandler(req: Request) {
       ...parsed.data,
     });
 
-    if (result.error) {
-      return apiError(result.error, result.status || 400);
-    }
-
     return apiSuccess(result.data, 201);
   } catch (error) {
     console.error('POST Document Error:', error);

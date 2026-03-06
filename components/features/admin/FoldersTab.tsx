@@ -131,10 +131,10 @@ export function FoldersTab() {
                   <div className="flex-1">
                     <h3 className="font-medium">{folder.name}</h3>
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge className={`flex items-center gap-1 ${getVisibilityColor(folder.visibility)}`}>
+                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getVisibilityColor(folder.visibility)}`}>
                         {getVisibilityIcon(folder.visibility)}
                         <span className="text-xs">{folder.visibility}</span>
-                      </Badge>
+                      </div>
                     </div>
                   </div>
                 </div>
