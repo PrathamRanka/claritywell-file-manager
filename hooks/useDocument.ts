@@ -61,18 +61,26 @@ export function useDocument(documentId: string) {
   };
 }
 
-export function useDocuments(params?: { requirementId?: string; folderId?: string }) {
+export function useDocuments(params?: { requirementId?: string; folderId?: string; page?: number; limit?: number }) {
   const queryParams = new URLSearchParams();
   if (params?.requirementId) queryParams.set('requirementId', params.requirementId);
   if (params?.folderId) queryParams.set('folderId', params.folderId);
+  
+  queryParams.set('page', (params?.page || 1).toString());
+  queryParams.set('limit', (params?.limit || 20).toString());
 
   const queryString = queryParams.toString();
   const url = `/api/documents${queryString ? `?${queryString}` : ''}`;
 
   const { data, error, mutate, isLoading } = useSWR<any>(url, fetcher);
 
+  const { items: docs = [], total = 0, page = 1, totalPages = 1 } = data?.data ?? data ?? {};
+
   return {
-    documents: data?.data ?? data ?? { items: [], total: 0 },
+    documents: docs,
+    total,
+    page,
+    totalPages,
     isLoading,
     isError: error,
     mutate,

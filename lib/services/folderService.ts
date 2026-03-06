@@ -7,18 +7,24 @@ import {
   createFolder,
   listFolderItemsByDocumentWhere,
   countFolderItemsByDocumentWhere,
+  countFolders,
 } from '@/lib/repositories/folderRepository';
 import { findDocumentWithRelations } from '@/lib/repositories/documentRepository';
 import { getUserDepartmentIds } from '@/lib/helpers/userContext';
 import { getVisibleDocumentsWhereClause, canManageFolder, canViewDocument } from '@/lib/permissions';
 
-export async function listFoldersService(params: { userId: string; userRole: string }) {
-  const { userId, userRole } = params;
+export async function listFoldersService(params: { userId: string; userRole: string; page?: number; limit?: number }) {
+  const { userId, userRole, page = 1, limit = 50 } = params;
+  const skip = (page - 1) * limit;
 
   const userDepartmentIds = await getUserDepartmentIds(userId);
   const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
 
-  const folders = await listFoldersWithDocumentCount(docWhere);
+  const [folders, total] = await Promise.all([
+    listFoldersWithDocumentCount(docWhere, skip, limit),
+    countFolders(),
+  ]);
+
   const isAdmin = userRole === 'ADMIN';
 
   return {
@@ -31,6 +37,9 @@ export async function listFoldersService(params: { userId: string; userRole: str
         parentId: f.parentId,
         documentCount: f.items.length,
       })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     },
   };
 }

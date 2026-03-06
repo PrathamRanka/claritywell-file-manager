@@ -24,9 +24,13 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('users');
   const isAdmin = status === 'authenticated' && session?.user?.role === 'ADMIN';
 
-  const { users, mutate: mutateUsers, isError: usersError } = useUsers(isAdmin && activeTab === 'users');
-  const { departments, mutate: mutateDepartments, isError: departmentsError } = useDepartments(isAdmin && (activeTab === 'departments' || activeTab === 'requirements'));
-  const { requirements, mutate: mutateRequirements, isError: requirementsError } = useRequirements(isAdmin && activeTab === 'requirements');
+  const [usersPage, setUsersPage] = useState(1);
+  const [departmentsPage, setDepartmentsPage] = useState(1);
+  const [requirementsPage, setRequirementsPage] = useState(1);
+
+  const { users, totalPages: userPages, mutate: mutateUsers, isError: usersError } = useUsers(isAdmin && activeTab === 'users', usersPage);
+  const { departments, totalPages: deptPages, mutate: mutateDepartments, isError: departmentsError } = useDepartments(isAdmin && (activeTab === 'departments' || activeTab === 'requirements'), departmentsPage);
+  const { requirements, totalPages: reqPages, mutate: mutateRequirements, isError: requirementsError } = useRequirements(isAdmin && activeTab === 'requirements', requirementsPage);
   const { stats } = useDashboardStats();
 
   // Check authentication and authorization
@@ -123,15 +127,18 @@ export default function AdminPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'users' && <UsersTab users={users} mutate={mutateUsers} />}
+      {activeTab === 'users' && <UsersTab users={users} page={usersPage} totalPages={userPages} onPageChange={setUsersPage} mutate={mutateUsers} />}
       {activeTab === 'departments' && (
-        <DepartmentsTab departments={departments} mutate={mutateDepartments} />
+        <DepartmentsTab departments={departments} page={departmentsPage} totalPages={deptPages} onPageChange={setDepartmentsPage} mutate={mutateDepartments} />
       )}
       {activeTab === 'folders' && <FoldersTab />}
       {activeTab === 'requirements' && (
         <RequirementsTab
           requirements={requirements}
           departments={departments}
+          page={requirementsPage}
+          totalPages={reqPages}
+          onPageChange={setRequirementsPage}
           mutate={mutateRequirements}
         />
       )}

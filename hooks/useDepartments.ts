@@ -7,11 +7,15 @@ export interface Department {
   members: Array<{ id: string; name: string; email: string }>;
 }
 
-export function useDepartments(enabled = true) {
-  const { data, error, mutate, isLoading } = useSWR<any>(enabled ? '/api/departments' : null, fetcher, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
+export function useDepartments(enabled = true, page = 1, limit = 50) {
+  const { data, error, mutate, isLoading } = useSWR<any>(
+    enabled ? `/api/departments?page=${page}&limit=${limit}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  );
 
   // Safely extract departments array from various response formats
   let rawDepartments = [];
@@ -31,8 +35,14 @@ export function useDepartments(enabled = true) {
     members: Array.isArray(d.members) ? d.members : [],
   }));
 
+  const total = data?.total || data?.data?.total || departments.length;
+  const totalPages = data?.totalPages || data?.data?.totalPages || 1;
+
   return {
     departments,
+    total,
+    page,
+    totalPages,
     isLoading,
     isError: error,
     mutate,

@@ -13,13 +13,21 @@ async function GETHandler(req: Request) {
     const session = await auth();
     if (!session?.user?.id) return apiUnauthorized();
 
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+
     const result = await listFoldersService({
       userId: session.user.id,
       userRole: session.user.role || 'USER',
+      page,
+      limit,
     });
 
     const folders = result.data?.folders || [];
-    return apiSuccess({ folders });
+    const total = result.data?.total || 0;
+    const totalPages = result.data?.totalPages || 0;
+    return apiSuccess({ folders, total, page, totalPages });
   } catch (error) {
     console.error('GET Folders Error:', error);
     return apiError('Internal Server Error', 500);

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils/formatters';
 import { toast } from 'sonner';
 import { Button, Modal, Input, Select } from '@/components/ui';
+import { Pagination } from '@/components/ui/Pagination';
 import { Requirement } from '@/hooks/useRequirement';
 import { Department } from '@/hooks/useDepartments';
 import { PriorityBadge } from '../requirements/PriorityBadge';
@@ -20,10 +21,13 @@ type CreateRequirementForm = z.infer<typeof createRequirementSchema>;
 interface RequirementsTabProps {
   requirements: Requirement[];
   departments: Department[];
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   mutate: () => void;
 }
 
-export function RequirementsTab({ requirements, departments, mutate }: RequirementsTabProps) {
+export function RequirementsTab({ requirements, departments, page, totalPages, onPageChange, mutate }: RequirementsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
 
   const {
@@ -120,6 +124,12 @@ export function RequirementsTab({ requirements, departments, mutate }: Requireme
           </table>
         </div>
       </div>
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={onPageChange} 
+      />
 
       {/* Create Modal */}
       <Modal

@@ -20,9 +20,11 @@ export async function findFolder(id: string) {
   });
 }
 
-export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWhereInput) {
+export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWhereInput, skip?: number, limit?: number) {
   const folders = await prisma.folder.findMany({
     where: { deletedAt: null },
+    ...(skip !== undefined && { skip }),
+    ...(limit !== undefined && { take: limit }),
     select: {
       id: true,
       name: true,
@@ -49,6 +51,12 @@ export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWher
     createdAt: folder.createdAt,
     items: Array(folder._count.items).fill({ id: '' }), // Dummy array for length check
   }));
+}
+
+export async function countFolders() {
+  return prisma.folder.count({
+    where: { deletedAt: null },
+  });
 }
 
 export async function updateFolder(id: string, name?: string, visibility?: string) {

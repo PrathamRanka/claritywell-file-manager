@@ -42,11 +42,15 @@ export function useRequirement(requirementId: string) {
   };
 }
 
-export function useRequirements(enabled = true) {
-  const { data, error, mutate, isLoading } = useSWR<any>(enabled ? '/api/requirements' : null, fetcher, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
+export function useRequirements(enabled = true, page = 1, limit = 50) {
+  const { data, error, mutate, isLoading } = useSWR<any>(
+    enabled ? `/api/requirements?page=${page}&limit=${limit}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  );
 
   // Safely extract requirements array from various response formats
   let requirements = [];
@@ -60,8 +64,14 @@ export function useRequirements(enabled = true) {
     }
   }
 
+  const total = data?.total || data?.data?.total || requirements.length;
+  const totalPages = data?.totalPages || data?.data?.totalPages || 1;
+
   return {
     requirements,
+    total,
+    page,
+    totalPages,
     isLoading,
     isError: error,
     mutate,

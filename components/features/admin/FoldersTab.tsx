@@ -8,8 +8,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/utils/zodResolver';
 import { createFolderSchema } from '@/lib/validations';
 import { z } from 'zod';
-import useSWR from 'swr';
-import { fetcher } from '@/lib/utils/api';
+import { useFolders } from '@/hooks/useFolder';
+import { Pagination } from '@/components/ui/Pagination';
 
 type CreateFolderForm = z.infer<typeof createFolderSchema>;
 
@@ -21,12 +21,12 @@ interface Folder {
 }
 
 export function FoldersTab() {
+  const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editingVisibility, setEditingVisibility] = useState<string>('PRIVATE');
 
-  const { data: response, mutate } = useSWR<any>('/api/admin/folders', fetcher);
-  const folders: Folder[] = response?.data?.folders || [];
+  const { folders, totalPages, mutate } = useFolders(page, 20);
 
   const {
     register,
@@ -190,6 +190,12 @@ export function FoldersTab() {
           ))}
         </div>
       )}
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={setPage} 
+      />
 
       {/* Create Modal */}
       {showCreate && (

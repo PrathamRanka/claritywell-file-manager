@@ -4,9 +4,11 @@ import { fetcher } from '@/lib/utils/api';
 export interface Folder {
   id: string;
   name: string;
-  parentId: string | null;
+  parentId?: string | null;
+  visibility: string;
   parent?: Folder;
   documentCount?: number;
+  createdAt: string;
   children?: Folder[];
 }
 
@@ -26,8 +28,11 @@ export function useFolder(folderId: string) {
   };
 }
 
-export function useFolders() {
-  const { data, error, mutate, isLoading } = useSWR<any>('/api/folders', fetcher);
+export function useFolders(page = 1, limit = 50) {
+  const { data, error, mutate, isLoading } = useSWR<any>(
+    `/api/folders?page=${page}&limit=${limit}`,
+    fetcher
+  );
 
   // Handle different API response structures
   let folders: Folder[] = [];
@@ -39,8 +44,14 @@ export function useFolders() {
     folders = data.data.folders;
   }
 
+  const total = data?.total || data?.data?.total || folders.length;
+  const totalPages = data?.totalPages || data?.data?.totalPages || 1;
+
   return {
     folders,
+    total,
+    page,
+    totalPages,
     isLoading,
     isError: error,
     mutate,

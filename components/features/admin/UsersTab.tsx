@@ -5,6 +5,7 @@ import { Plus, Edit3, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
 import { toast } from 'sonner';
 import { Badge, Button, Modal, Input, Select } from '@/components/ui';
+import { Pagination } from '@/components/ui/Pagination';
 import { User } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/utils/zodResolver';
@@ -16,10 +17,13 @@ type UpdateUserForm = z.infer<typeof updateUserSchema>;
 
 interface UsersTabProps {
   users: User[];
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   mutate: () => void;
 }
 
-export function UsersTab({ users, mutate }: UsersTabProps) {
+export function UsersTab({ users, page, totalPages, onPageChange, mutate }: UsersTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
@@ -179,6 +183,12 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
           </table>
         </div>
       </div>
+      
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={onPageChange} 
+      />
 
       {/* Create/Edit Modal */}
       <Modal

@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { useDocuments } from '@/hooks/useDocument';
 import { LoadingSpinner } from '@/components/ui';
+import { Pagination } from '@/components/ui/Pagination';
 import { DocumentGrid } from '@/components/features/documents/DocumentGrid';
 
 export default function DocumentsPage() {
-  const { documents, isLoading, isError } = useDocuments();
+  const [page, setPage] = useState(1);
+  const { documents, totalPages, isLoading, isError } = useDocuments({ page, limit: 20 });
   const documentItems = Array.isArray(documents?.items) ? documents.items : [];
 
   if (isLoading) {
@@ -33,9 +36,18 @@ export default function DocumentsPage() {
       <DocumentGrid documents={documentItems} isLoading={isLoading} />
 
       {!isLoading && documentItems.length > 0 && (
-        <p className="mt-4 text-sm text-muted-foreground">
-          {documentItems.length} document{documentItems.length !== 1 ? 's' : ''} shown
-        </p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
+          <p className="text-sm text-muted-foreground">
+            {documentItems.length} document{documentItems.length !== 1 ? 's' : ''} shown on this page
+          </p>
+          <div className="flex-1 max-w-sm">
+            <Pagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+            />
+          </div>
+        </div>
       )}
     </div>
   );

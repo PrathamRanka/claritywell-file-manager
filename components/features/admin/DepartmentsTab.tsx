@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge, Button, Modal, Input, Select } from '@/components/ui';
+import { Pagination } from '@/components/ui/Pagination';
 import { Department } from '@/hooks/useDepartments';
 import { useUsers } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
@@ -16,10 +17,13 @@ type CreateDepartmentForm = z.infer<typeof createDepartmentSchema>;
 
 interface DepartmentsTabProps {
   departments: Department[];
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   mutate: () => void;
 }
 
-export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
+export function DepartmentsTab({ departments, page, totalPages, onPageChange, mutate }: DepartmentsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   const [showAddMember, setShowAddMember] = useState<string | null>(null);
@@ -208,6 +212,12 @@ export function DepartmentsTab({ departments, mutate }: DepartmentsTabProps) {
           );
         })}
       </div>
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={onPageChange} 
+      />
 
       {/* Create Modal */}
       <Modal
