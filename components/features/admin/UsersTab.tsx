@@ -165,16 +165,27 @@ export function UsersTab({ users, mutate }: UsersTabProps) {
         title={editingUserId ? 'Edit User' : 'Create User'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowCreate(false)}>
+            <Button 
+              variant="secondary" 
+              type="button"
+              onClick={() => {
+                setShowCreate(false);
+                setEditingUserId(null);
+                reset();
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit(onSubmit)}>
+            <Button 
+              type="submit" 
+              form="user-form"
+            >
               {editingUserId ? 'Update' : 'Create'}
             </Button>
           </>
         }
       >
-        <form className="space-y-4">
+        <form id="user-form" className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Input
             {...register('name')}
             label="Name"
