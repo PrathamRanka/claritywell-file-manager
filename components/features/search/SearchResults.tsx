@@ -7,30 +7,34 @@ import { highlightText } from '@/lib/utils/formatters';
 import { EmptyState } from '@/components/ui';
 import { Inbox } from 'lucide-react';
 
+// Flexible document type that handles both API shapes
+interface APIDocument {
+  id: string;
+  title: string;
+  type: string;
+  // API returns flat ownerName, component expected nested owner.name
+  ownerName?: string;
+  owner?: { id?: string; name: string };
+  createdAt: string | Date;
+  excerpt?: string;
+  contentExcerpt?: string;
+}
+
+// Flexible comment type that handles both API shapes
+interface APIComment {
+  id: string;
+  content: string;
+  documentId?: string;
+  document?: { id?: string; title?: string };
+  documentTitle?: string;
+  author: { id?: string; name: string };
+  createdAt: string | Date;
+  excerpt?: string;
+}
+
 interface SearchResult {
-  documents: Array<{
-    id: string;
-    title: string;
-    type: string;
-    owner: {
-      id: string;
-      name: string;
-    };
-    createdAt: string;
-    excerpt: string;
-  }>;
-  comments: Array<{
-    id: string;
-    content: string;
-    documentId: string;
-    documentTitle: string;
-    author: {
-      id: string;
-      name: string;
-    };
-    createdAt: string;
-    excerpt: string;
-  }>;
+  documents?: APIDocument[];
+  comments?: APIComment[];
 }
 
 interface SearchResultsProps {
@@ -57,7 +61,9 @@ export function SearchResults({ results, query, isLoading }: SearchResultsProps)
     );
   }
 
-  const totalResults = (results?.documents.length || 0) + (results?.comments.length || 0);
+  const docs = results?.documents ?? [];
+  const comments = results?.comments ?? [];
+  const totalResults = docs.length + comments.length;
 
   if (results && totalResults === 0) {
     return (
@@ -74,101 +80,117 @@ export function SearchResults({ results, query, isLoading }: SearchResultsProps)
   return (
     <div className="space-y-8">
       {/* Documents section */}
-      {results.documents.length > 0 && (
+      {docs.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-accent" />
             <h2 className="font-display text-xl font-bold">
               Documents
               <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({results.documents.length})
+                ({docs.length})
               </span>
             </h2>
           </div>
 
           <div className="space-y-3">
-            {results.documents.map((doc) => (
-              <Link
-                key={doc.id}
-                href={`/documents/${doc.id}`}
-                className="block bg-surface border border-border rounded-lg p-4 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start gap-3">
-                  <FileText className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground group-hover:text-accent transition-colors mb-1">
-                      {highlightText(doc.title, query)}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                      {highlightText(doc.excerpt, query)}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {doc.owner.name}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatRelativeTime(doc.createdAt)}
-                      </span>
-                      <span className="px-2 py-0.5 bg-muted rounded text-xs">
-                        {doc.type}
-                      </span>
+            {docs.map((doc) => {
+              // Handle both API shapes
+              const ownerName = doc.owner?.name ?? doc.ownerName ?? 'Unknown';
+              const excerpt = doc.excerpt ?? doc.contentExcerpt ?? '';
+              const createdAt = typeof doc.createdAt === 'string' ? doc.createdAt : new Date(doc.createdAt).toISOString();
+              return (
+                <Link
+                  key={doc.id}
+                  href={`/documents/${doc.id}`}
+                  className="block bg-surface border border-border rounded-lg p-4 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start gap-3">
+                    <FileText className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground group-hover:text-accent transition-colors mb-1">
+                        {highlightText(doc.title, query)}
+                      </h3>
+                      {excerpt && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {highlightText(excerpt, query)}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {ownerName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatRelativeTime(createdAt)}
+                        </span>
+                        <span className="px-2 py-0.5 bg-muted rounded text-xs">
+                          {doc.type}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
 
       {/* Comments section */}
-      {results.comments.length > 0 && (
+      {comments.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-accent" />
             <h2 className="font-display text-xl font-bold">
               Comments
               <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({results.comments.length})
+                ({comments.length})
               </span>
             </h2>
           </div>
 
           <div className="space-y-3">
-            {results.comments.map((comment) => (
-              <Link
-                key={comment.id}
-                href={`/documents/${comment.documentId}`}
-                className="block bg-surface border border-border rounded-lg p-4 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start gap-3">
-                  <MessageSquare className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground group-hover:text-accent transition-colors mb-1">
-                      {comment.documentTitle}
-                    </h3>
-                    <p className="text-sm text-foreground/90 line-clamp-2 mb-2">
-                      {highlightText(comment.excerpt, query)}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {comment.author.name}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatRelativeTime(comment.createdAt)}
-                      </span>
+            {comments.map((comment) => {
+              const docId = comment.documentId ?? comment.document?.id ?? '';
+              const docTitle = comment.documentTitle ?? comment.document?.title ?? 'Document';
+              const excerpt = comment.excerpt ?? comment.content ?? '';
+              const createdAt = typeof comment.createdAt === 'string' ? comment.createdAt : new Date(comment.createdAt).toISOString();
+              return (
+                <Link
+                  key={comment.id}
+                  href={`/documents/${docId}`}
+                  className="block bg-surface border border-border rounded-lg p-4 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start gap-3">
+                    <MessageSquare className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground group-hover:text-accent transition-colors mb-1">
+                        {docTitle}
+                      </h3>
+                      <p className="text-sm text-foreground/90 line-clamp-2 mb-2">
+                        {highlightText(excerpt, query)}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {comment.author?.name ?? 'Unknown'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatRelativeTime(createdAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
     </div>
   );
 }
+
+

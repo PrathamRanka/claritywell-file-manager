@@ -1107,9 +1107,9 @@ Creates:
 
 ---
 
-## 📝 License
+## License
 
-This project is part of an assessment. All rights reserved.
+This project is part of PAASA assessment. All rights reserved.
 
 ---
 

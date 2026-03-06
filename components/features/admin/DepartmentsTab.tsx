@@ -7,7 +7,7 @@ import { Badge, Button, Modal, Input, Select } from '@/components/ui';
 import { Department } from '@/hooks/useDepartments';
 import { useUsers } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/utils/zodResolver';
 import { createDepartmentSchema } from '@/lib/constants/schemas';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';

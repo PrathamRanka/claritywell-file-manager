@@ -42,7 +42,7 @@ function SearchContent() {
     fetcher
   );
 
-  const totalResults = (results?.documents.length || 0) + (results?.comments.length || 0);
+  const totalResults = (results?.documents?.length || 0) + (results?.comments?.length || 0);
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto">

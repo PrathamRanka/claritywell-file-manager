@@ -28,13 +28,8 @@ export async function advancedSearchService(params: {
     userDepartmentIds
   );
 
-  // Escape special characters for PostgreSQL full-text search
-  const sanitizedQuery = q
-    .trim()
-    .split(/\s+/)
-    .map((term) => term.replace(/[|&!:()]/g, ''))
-    .filter((term) => term.length > 0)
-    .join(' | ');
+  // Sanitize query for PostgreSQL websearch_to_tsquery (supports quotes, OR, -, etc.)
+  const sanitizedQuery = q.trim();
 
   if (!sanitizedQuery) {
     return { data: { documents: [], comments: [], total: 0 } };
@@ -69,7 +64,7 @@ export async function advancedSearchService(params: {
           ts_rank(
             setweight(to_tsvector('english', COALESCE(d.title, '')), 'A') ||
             setweight(to_tsvector('english', COALESCE(d."contentExcerpt", '')), 'B'),
-            plainto_tsquery('english', ${sanitizedQuery})
+            websearch_to_tsquery('english', ${sanitizedQuery})
           ) as rank
         FROM "Document" d
         JOIN "User" u ON d."ownerId" = u.id
@@ -85,7 +80,7 @@ export async function advancedSearchService(params: {
           AND (
             to_tsvector('english', COALESCE(d.title, '')) ||
             to_tsvector('english', COALESCE(d."contentExcerpt", ''))
-          ) @@ plainto_tsquery('english', ${sanitizedQuery})
+          ) @@ websearch_to_tsquery('english', ${sanitizedQuery})
         ORDER BY rank DESC
         LIMIT ${limit} OFFSET ${skip}
       `,
@@ -135,7 +130,7 @@ export async function advancedSearchService(params: {
           AND (
             to_tsvector('english', COALESCE(d.title, '')) ||
             to_tsvector('english', COALESCE(d."contentExcerpt", ''))
-          ) @@ plainto_tsquery('english', ${sanitizedQuery})
+          ) @@ websearch_to_tsquery('english', ${sanitizedQuery})
       `,
     ]);
 

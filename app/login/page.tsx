@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { FileText, Mail, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/utils/zodResolver';
 import { z } from 'zod';
 import { loginSchema } from '@/lib/constants/schemas';
 import { Input, Button } from '@/components/ui';

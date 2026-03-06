@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Badge, Button, Modal, Input, Select } from '@/components/ui';
 import { User } from '@/hooks/useUsers';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/utils/zodResolver';
 import { createUserSchema } from '@/lib/constants/schemas';
 import { z } from 'zod';
 

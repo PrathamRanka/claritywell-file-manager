@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { FileText, Mail, Lock, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/utils/zodResolver';
 import { z } from 'zod';
 import { Input, Button } from '@/components/ui';
 import { signIn } from 'next-auth/react';

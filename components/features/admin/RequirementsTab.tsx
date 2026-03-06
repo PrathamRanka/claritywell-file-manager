@@ -11,7 +11,7 @@ import { Department } from '@/hooks/useDepartments';
 import { PriorityBadge } from '../requirements/PriorityBadge';
 import { StatusBadge } from '../requirements/StatusBadge';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/utils/zodResolver';
 import { createRequirementSchema } from '@/lib/constants/schemas';
 import { z } from 'zod';
 
