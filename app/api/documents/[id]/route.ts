@@ -1,5 +1,4 @@
 import { withRouteMetrics, timedJson } from '@/lib/utils/route-metrics';
-import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { updateDocumentSchema } from '@/lib/validations';
 import { rateLimit } from '@/lib/rateLimit';
@@ -9,19 +8,44 @@ import {
   deleteDocumentService,
 } from '@/lib/services/documentService';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-async function GETHandler(req: Request, { params }: { params: { id: string } }) {
+type RouteContext = {
+  params?: {
+    id?: string;
+  };
+};
+
+function getDocumentId(context: RouteContext): string | null {
+  const documentId = context?.params?.id;
+  if (!documentId || typeof documentId !== 'string') return null;
+  return documentId;
+}
+
+function parsePositiveInt(value: string | null, fallback: number) {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+async function GETHandler(req: Request, context: RouteContext) {
   try {
+    const documentId = getDocumentId(context);
+    if (!documentId) {
+      return timedJson({ data: null, error: 'Invalid document id' }, { status: 400 });
+    }
+
     const session = await auth();
     if (!session?.user?.id) return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const page = parsePositiveInt(searchParams.get('page'), 1);
+    const limit = parsePositiveInt(searchParams.get('limit'), 20);
 
     const result = await getDocumentService({
-      documentId: params.id,
+      documentId,
       userId: session.user.id,
       userRole: session.user.role || 'USER',
       page,
@@ -34,13 +58,18 @@ async function GETHandler(req: Request, { params }: { params: { id: string } }) 
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('GET Document[id] Error:', error);
+    console.error('GET /api/documents/[id] failed:', error);
     return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-async function PATCHHandler(req: Request, { params }: { params: { id: string } }) {
+async function PATCHHandler(req: Request, context: RouteContext) {
   try {
+    const documentId = getDocumentId(context);
+    if (!documentId) {
+      return timedJson({ data: null, error: 'Invalid document id' }, { status: 400 });
+    }
+
     const ip = req.headers.get('x-forwarded-for') || 'unknown';
     if (!rateLimit(`doc_patch_${ip}`, 10, 60000)) {
       return timedJson({ data: null, error: 'Too Many Requests' }, { status: 429 });
@@ -56,7 +85,7 @@ async function PATCHHandler(req: Request, { params }: { params: { id: string } }
     const { title, contentHtml, visibility } = parsed.data;
 
     const result = await updateDocumentService({
-      documentId: params.id,
+      documentId,
       userId: session.user.id,
       userRole: session.user.role || 'USER',
       title,
@@ -70,18 +99,23 @@ async function PATCHHandler(req: Request, { params }: { params: { id: string } }
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('PATCH Document[id] Error:', error);
+    console.error('PATCH /api/documents/[id] failed:', error);
     return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-async function DELETEHandler(req: Request, { params }: { params: { id: string } }) {
+async function DELETEHandler(req: Request, context: RouteContext) {
   try {
+    const documentId = getDocumentId(context);
+    if (!documentId) {
+      return timedJson({ data: null, error: 'Invalid document id' }, { status: 400 });
+    }
+
     const session = await auth();
     if (!session?.user?.id) return timedJson({ data: null, error: 'Unauthorized' }, { status: 401 });
 
     const result = await deleteDocumentService({
-      documentId: params.id,
+      documentId,
       userId: session.user.id,
       userRole: session.user.role || 'USER',
     });
@@ -92,7 +126,7 @@ async function DELETEHandler(req: Request, { params }: { params: { id: string } 
 
     return timedJson({ data: result.data, error: null });
   } catch (error) {
-    console.error('DELETE Document[id] Error:', error);
+    console.error('DELETE /api/documents/[id] failed:', error);
     return timedJson({ data: null, error: 'Internal Server Error' }, { status: 500 });
   }
 }
