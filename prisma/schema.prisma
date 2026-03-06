@@ -1,10 +1,12 @@
 datasource db {
   provider = "postgresql"
+  // binaryTargets = ["native", "linux-musl"]
 }
 
 generator client {
   provider = "prisma-client-js"
   output   = "./generated"
+  binaryTargets = ["native", "linux-musl"]
 }
 
 enum Role {
