@@ -5,10 +5,11 @@ export async function createFolder(data: {
   name: string;
   createdById: string;
   parentId?: string | null;
+  visibility?: string;
 }) {
   return prisma.folder.create({
     data: data as any,
-    select: { id: true, name: true, parentId: true, createdAt: true },
+    select: { id: true, name: true, parentId: true, visibility: true, createdAt: true },
   });
 }
 
@@ -49,11 +50,15 @@ export async function listFoldersWithDocumentCount(docWhere: Prisma.DocumentWher
   }));
 }
 
-export async function updateFolder(id: string, name: string) {
+export async function updateFolder(id: string, name?: string, visibility?: string) {
+  const updateData: any = {};
+  if (name) updateData.name = name;
+  if (visibility) updateData.visibility = visibility;
+  
   return prisma.folder.update({
     where: { id },
-    data: { name },
-    select: { id: true, name: true, createdAt: true },
+    data: updateData,
+    select: { id: true, name: true, visibility: true, createdAt: true },
   });
 }
 

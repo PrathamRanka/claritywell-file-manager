@@ -43,6 +43,7 @@ async function POSTHandler(req: Request) {
       userId: session.user.id,
       name: parsed.data.name,
       parentId: parsed.data.parentId,
+      visibility: parsed.data.visibility,
     });
 
     return apiSuccess(result.data, 201);

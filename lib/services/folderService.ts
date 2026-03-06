@@ -39,9 +39,10 @@ export async function updateFolderService(params: {
   folderId: string;
   userId: string;
   userRole: string;
-  name: string;
+  name?: string;
+  visibility?: string;
 }) {
-  const { folderId, userId, userRole, name } = params;
+  const { folderId, userId, userRole, name, visibility } = params;
 
   const folder = await findFolder(folderId);
   if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
@@ -50,7 +51,7 @@ export async function updateFolderService(params: {
     return { error: 'Forbidden', status: 403 };
   }
 
-  const updatedFolder = await updateFolder(folderId, name);
+  const updatedFolder = await updateFolder(folderId, name, visibility);
   return { data: { folder: updatedFolder } };
 }
 
@@ -102,9 +103,15 @@ export async function createFolderService(params: {
   userId: string;
   name: string;
   parentId?: string | null;
+  visibility?: string;
 }) {
-  const { userId, name, parentId } = params;
-  const folder = await createFolder({ name, createdById: userId, parentId });
+  const { userId, name, parentId, visibility } = params;
+  const folder = await createFolder({ 
+    name, 
+    createdById: userId, 
+    parentId,
+    visibility: visibility || 'PRIVATE'
+  });
   return { data: { folder } };
 }
 

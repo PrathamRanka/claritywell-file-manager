@@ -64,30 +64,8 @@ export function timedJson<T>(body: T, init?: ResponseInit) {
 }
 
 function logMetrics(metrics: RouteMetrics) {
-  const base = {
-    route: metrics.route,
-    method: metrics.method,
-    status: metrics.status,
-    totalMs: Number(metrics.totalMs.toFixed(2)),
-    authMs: Number(metrics.authMs.toFixed(2)),
-    dbMs: Number(metrics.dbMs.toFixed(2)),
-    dbQueryCount: metrics.dbQueryCount,
-    serializationMs: Number(metrics.serializationMs.toFixed(2)),
-    startedAt: metrics.startedAt,
-    error: metrics.error,
-  };
-
-  if (metrics.totalMs >= 1000) {
-    console.warn('[SLOW_API_ROUTE]', {
-      ...base,
-      slowQueries: metrics.slowQueries,
-    });
-    return;
-  }
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.info('[API_ROUTE_METRICS]', base);
-  }
+  // Logging disabled
+  return;
 }
 
 export function withRouteMetrics<TArgs extends unknown[], TResult>(

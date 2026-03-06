@@ -64,11 +64,13 @@ export const createCommentSchema = z.object({
 export const createFolderSchema = z.object({
   name: z.string().min(1, "Folder name is required").max(255),
   parentId: z.string().cuid().optional().nullable(),
+  visibility: z.enum(['PRIVATE', 'DEPARTMENT', 'SHARED']).optional(),
 });
 
 // /api/folders/[id] (PATCH)
 export const updateFolderSchema = z.object({
-  name: z.string().min(1, "Folder name is required").max(255),
+  name: z.string().min(1, "Folder name is required").max(255).optional(),
+  visibility: z.enum(['PRIVATE', 'DEPARTMENT', 'SHARED']).optional(),
 });
 
 // /api/folders/[id]/items

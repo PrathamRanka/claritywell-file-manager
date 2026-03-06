@@ -40,6 +40,7 @@ async function PATCHHandler(req: Request, { params }: { params: { id: string } }
       userId: session.user.id,
       userRole: session.user.role || 'USER',
       name: parsed.data.name,
+      visibility: parsed.data.visibility,
     });
 
     if (result.error) {

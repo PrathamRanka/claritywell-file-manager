@@ -32,9 +32,7 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient
 // Log slow queries in development
 if (process.env.NODE_ENV === 'development') {
   (prismaClient as any).$on('query', (e: any) => {
-    if (e.duration > 100) { // Log queries slower than 100ms
-      console.log(`Slow Query (${e.duration}ms): ${e.query}`);
-    }
+    // Logging disabled
   });
 }
 

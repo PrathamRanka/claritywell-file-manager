@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Building2, FileText, Activity } from 'lucide-react';
+import { Users, Building2, FileText, Activity, Folder } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
@@ -10,11 +10,12 @@ import { useRequirements } from '@/hooks/useRequirement';
 import { UsersTab } from '@/components/features/admin/UsersTab';
 import { DepartmentsTab } from '@/components/features/admin/DepartmentsTab';
 import { RequirementsTab } from '@/components/features/admin/RequirementsTab';
+import { FoldersTab } from '@/components/features/admin/FoldersTab';
 import { AuditLogsTab } from '@/components/features/admin/AuditLogsTab';
 import { AdminDashboardOverview } from '@/components/features/admin/AdminDashboardOverview';
 import { LoadingSpinner } from '@/components/ui';
 
-type TabType = 'users' | 'departments' | 'requirements' | 'audit';
+type TabType = 'users' | 'departments' | 'folders' | 'requirements' | 'audit';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -72,6 +73,7 @@ export default function AdminPage() {
   const tabs = [
     { id: 'users' as TabType, label: 'Users', icon: Users },
     { id: 'departments' as TabType, label: 'Departments', icon: Building2 },
+    { id: 'folders' as TabType, label: 'Folders', icon: Folder },
     { id: 'requirements' as TabType, label: 'Requirements', icon: FileText },
     { id: 'audit' as TabType, label: 'Audit Logs', icon: Activity },
   ];
@@ -81,7 +83,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold mb-2">Administration</h1>
-        <p className="text-muted-foreground">Manage users, departments, requirements, and monitor system activity</p>
+        <p className="text-muted-foreground">Manage users, departments, folders, requirements, and monitor system activity</p>
       </div>
 
       {/* Dashboard Overview */}
@@ -123,6 +125,7 @@ export default function AdminPage() {
       {activeTab === 'departments' && (
         <DepartmentsTab departments={departments} mutate={mutateDepartments} />
       )}
+      {activeTab === 'folders' && <FoldersTab />}
       {activeTab === 'requirements' && (
         <RequirementsTab
           requirements={requirements}
