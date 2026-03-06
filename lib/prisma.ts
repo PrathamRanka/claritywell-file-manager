@@ -7,7 +7,6 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// For Prisma v7 with PostgreSQL driver adapter
 const prismaClient =
   globalForPrisma.prisma ??
   new PrismaClient({
@@ -19,10 +18,25 @@ const prismaClient =
         connectionTimeoutMillis: 5000,
       })
     ),
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    log: process.env.NODE_ENV === 'development' 
+      ? [
+          { emit: 'event', level: 'query' },
+          { emit: 'stdout', level: 'error' },
+          { emit: 'stdout', level: 'warn' },
+        ] as any
+      : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient;
+
+// Log slow queries in development
+if (process.env.NODE_ENV === 'development') {
+  (prismaClient as any).$on('query', (e: any) => {
+    if (e.duration > 100) { // Log queries slower than 100ms
+      console.log(`Slow Query (${e.duration}ms): ${e.query}`);
+    }
+  });
+}
 
 export const prisma = prismaClient.$extends({
   query: {

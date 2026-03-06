@@ -89,6 +89,8 @@ model DepartmentMember {
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
   @@id([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
 }
 
 model Requirement {
@@ -104,6 +106,12 @@ model Requirement {
   department   Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   createdBy    User              @relation("RequirementCreator", fields: [createdById], references: [id])
   documents    Document[]
+
+  @@index([departmentId])
+  @@index([createdById])
+  @@index([dueDate])
+  @@index([status])
+  @@index([departmentId, status])
 }
 
 model Document {
@@ -131,6 +139,9 @@ model Document {
   @@index([ownerId])
   @@index([requirementId])
   @@index([visibility])
+  @@index([deletedAt])
+  @@index([ownerId, deletedAt])
+  @@index([visibility, deletedAt])
 }
 
 model DocumentACL {
@@ -148,6 +159,9 @@ model DocumentACL {
   grantedBy    User?    @relation("AclGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
 
   @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@index([documentId, userId, canView])
 }
 
 model Folder {
@@ -162,6 +176,11 @@ model Folder {
   subfolders  Folder[]     @relation("FolderToFolder")
   createdBy   User         @relation("FolderCreator", fields: [createdById], references: [id])
   items       FolderItem[]
+
+  @@index([createdById])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@index([createdById, deletedAt])
 }
 
 model FolderItem {
@@ -176,6 +195,9 @@ model FolderItem {
   addedBy    User?    @relation("FolderItemAdder", fields: [addedById], references: [id], onDelete: SetNull)
 
   @@unique([folderId, documentId])
+  @@index([folderId])
+  @@index([documentId])
+  @@index([folderId, createdAt])
 }
 
 model Comment {
@@ -193,6 +215,8 @@ model Comment {
   childComments   Comment[] @relation("CommentToComment")
 
   @@index([documentId])
+  @@index([authorId])
+  @@index([parentCommentId])
 }
 
 model AuditLog {
@@ -205,4 +229,11 @@ model AuditLog {
   createdAt  DateTime    @default(now())
 
   user       User        @relation("AuditUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([documentId])
+  @@index([folderId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }

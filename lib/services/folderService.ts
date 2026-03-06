@@ -80,13 +80,15 @@ export async function addFolderItemService(params: {
 }) {
   const { folderId, userId, userRole, documentId } = params;
 
-  const folder = await findFolder(folderId);
+  // OPTIMIZATION: Parallelize folder, document, and department lookups
+  const [folder, document, userDepartmentIds] = await Promise.all([
+    findFolder(folderId),
+    findDocumentWithRelations(documentId),
+    getUserDepartmentIds(userId),
+  ]);
+
   if (!folder) return { error: 'Folder not found', status: 404 };
-
-  const document = await findDocumentWithRelations(documentId);
   if (!document || document.deletedAt) return { error: 'Document not found', status: 404 };
-
-  const userDepartmentIds = await getUserDepartmentIds(userId);
 
   if (!canViewDocument(userId, document, userRole, userDepartmentIds)) {
     return { error: 'Forbidden. Cannot view document.', status: 403 };
@@ -116,10 +118,14 @@ export async function listFolderItemsService(params: {
   const { folderId, userId, userRole, page, limit } = params;
   const skip = (page - 1) * limit;
 
-  const folder = await findFolder(folderId);
+  // OPTIMIZATION: Parallelize folder fetch and user department lookup
+  const [folder, userDepartmentIds] = await Promise.all([
+    findFolder(folderId),
+    getUserDepartmentIds(userId),
+  ]);
+
   if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
 
-  const userDepartmentIds = await getUserDepartmentIds(userId);
   const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
   const hasManagePermission = canManageFolder(userId, folder, userRole);
 
@@ -155,11 +161,15 @@ export async function getFolderService(params: {
 }) {
   const { folderId, userId, userRole } = params;
 
-  const folder = await findFolder(folderId);
+  // OPTIMIZATION: Parallelize folder fetch and user department lookup
+  const [folder, userDepartmentIds] = await Promise.all([
+    findFolder(folderId),
+    getUserDepartmentIds(userId),
+  ]);
+
   if (!folder || folder.deletedAt) return { error: 'Not Found', status: 404 };
 
   if (!canManageFolder(userId, folder, userRole)) {
-    const userDepartmentIds = await getUserDepartmentIds(userId);
     const docWhere = getVisibleDocumentsWhereClause(userId, userRole, userDepartmentIds);
     const visibleItemCount = await countFolderItemsByDocumentWhere(folderId, docWhere);
     if (visibleItemCount === 0) {
