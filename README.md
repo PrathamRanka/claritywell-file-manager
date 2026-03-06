@@ -1106,7 +1106,11 @@ Creates:
 - Sample departments, requirements, documents
 
 ---
-
+📝 Test Credentials:
+   ```Admin: admin@example.com / password123
+   User: user@example.com / password123
+   Manager: manager@example.com / password123```
+---
 ## License
 
 This project is part of PAASA assessment. All rights reserved.
